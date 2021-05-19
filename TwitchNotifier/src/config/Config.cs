@@ -1,13 +1,79 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
+using TwitchNotifier.src.ErrorHandling;
+using YamlDotNet.Serialization;
 
 namespace TwitchNotifier.src.config {
     /// <summary>
     /// The configuration of this program
     /// </summary>
     public class Config {
-        public TwitchNotifier TwitchNotifier { get; set; } = new TwitchNotifier();
+
+        /// <summary>
+        /// The local AppData directory
+        /// </summary>
+        private static string appdataDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+        /// <summary>
+        /// The full path of the directory in which the config lays
+        /// </summary>
+        private static string configLocation = appdataDirectory + Path.DirectorySeparatorChar + System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+
+        /// <summary>
+        /// The full path of the config file
+        /// </summary>
+        public static string configFileLocation = configLocation + Path.DirectorySeparatorChar + "config.yml";
+
+
+        /// <summary>
+        /// Create a new config file and its directory if it does not exist!
+        /// </summary>
+        public void CreateConfig() {
+            var config = Parser.Serialize(this);
+
+            if (Directory.Exists(configLocation)) {
+                // Console.WriteLine("Config directory \"" + configLocation + "\" already exists");
+            } else {
+                try {
+                    Directory.CreateDirectory(configLocation);
+                    Console.WriteLine("Config directory \"" + configLocation + "\" has been created!");
+                } catch (Exception e) {
+                    new Error() {
+                        IsTerminating = true,
+                        Message = "Cannot create config folder \"" + configLocation + "\"",
+                        Exception = e
+                    }.WriteError();
+                }
+            }
+
+            if (!File.Exists(configFileLocation)) {
+                File.WriteAllText(configFileLocation, config);
+                Console.WriteLine("Config file has been written to \"" + configFileLocation + "\"");
+            }
+        }
+
+
+        public static EventObject GetEventObjectByTwitchChannelName(string eventName, string username) {
+            EventObject returnValue = null;
+            var deserializer = new DeserializerBuilder().Build();
+            //var config = deserializer.Deserialize<Config>(File.ReadAllText(configFileLocation, Encoding.UTF8));
+            var config = deserializer.Deserialize<dynamic>(File.ReadAllText(configFileLocation, Encoding.UTF8));
+            var eventNodes = (Event)config["TwitchNotifier"][eventName];
+            
+            // eventNode is the key node for all settings below each event
+            foreach (var eventNode in typeof(Event).GetProperties()) {
+                var eventNodeObjects = ((EventObject)eventNode.GetValue(eventNodes)).Twitch.Usernames;
+            }
+
+            return returnValue;
+        }
+
+
+        public TwitchNotifierSettings TwitchNotifier { get; set; } = new TwitchNotifierSettings();
         public TwitchSettings Settings { get; set; } = new TwitchSettings();
     }
 
@@ -15,9 +81,9 @@ namespace TwitchNotifier.src.config {
     /// <summary>
     /// Contains the complete configuration
     /// </summary>
-    public class TwitchNotifier {
+    public class TwitchNotifierSettings {
         public Event OnStreamStart { get; set; } = new Event();
-        public Event OnStreamStop { get; set; } = new Event();
+        public Event OnStreamEnd { get; set; } = new Event();
         public Event OnFollow { get; set; } = new Event();
     }
 
@@ -34,8 +100,17 @@ namespace TwitchNotifier.src.config {
     /// Contains events from Twitch
     /// </summary>
     public class EventObject {
-        public TwitchSettings Twitch { get; set; } = new TwitchSettings();
+        public TwitchListenerSettings Twitch { get; set; } = new TwitchListenerSettings();
         public Embed Embed { get; set; } = new Embed();
+        public string WebHookUrl { get; set; } = "The Discord Webhook URL";
+    }
+
+
+    /// <summary>
+    /// Settings for the Twitch channels which are creating events
+    /// </summary>
+    public class TwitchListenerSettings {
+        public List<string> Usernames { get; set; } = new List<string>() { "Channelnames" };
     }
 
 
@@ -43,7 +118,8 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Twitch channel which are creating events
     /// </summary>
     public class TwitchSettings {
-        public string Username { get; set; } = "Channelname";
+        public string ClientID { get; set; } = "The Client ID of your Twitch app (developer portal)";
+        public string AccessToken { get; set; } = "Your App Access Token";
     }
 
 
@@ -80,7 +156,7 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Discord embed
     /// </summary>
     public class Embed {
-        public string Title { get; set; } = "%Username% went live!";
+        public string Title { get; set; } = "Something has happened at %Username%'s channel!";
         public string Url { get; set; } = "The title's URL which can be clicked";
         public string Description { get; set; } = "The embeds text / description";
         public string Color { get; set; } = "The embeds hex color (like #5555FF)";

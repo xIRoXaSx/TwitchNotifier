@@ -11,13 +11,12 @@ namespace TwitchNotifier.src.config {
         /// Serialize an object to a string
         /// </summary>
         /// <param name="objectToSerialze">The object to serialze</param>
-        public static void Serialize(object objectToSerialze) {
+        public static string Serialize(object objectToSerialze) {
             var serializer = new SerializerBuilder()
-                //.WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
 
-            var yaml = serializer.Serialize(objectToSerialze);
-            Console.WriteLine(yaml);
+            return serializer.Serialize(objectToSerialze);
         }
     }
 }
