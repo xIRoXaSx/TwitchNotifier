@@ -21,7 +21,7 @@ namespace TwitchNotifier.src.config {
         /// <summary>
         /// The full path of the directory in which the config lays
         /// </summary>
-        private static string configLocation = appdataDirectory + Path.DirectorySeparatorChar + System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+        public static string configLocation = appdataDirectory + Path.DirectorySeparatorChar + Assembly.GetExecutingAssembly().GetName().Name;
 
         /// <summary>
         /// The full path of the config file
@@ -32,15 +32,31 @@ namespace TwitchNotifier.src.config {
         /// <summary>
         /// Create a new config file and its directory if it does not exist!
         /// </summary>
-        public void CreateConfig() {
-            var config = Parser.Serialize(this);
+        /// <returns><code>true</code> if config got created. <code>false</code> if config already exists</returns>
+        public bool CreateConfig() {
+            var returnValue = false;
+            var newConfig = new Config();
 
-            if (Directory.Exists(configLocation)) {
-                // Console.WriteLine("Config directory \"" + configLocation + "\" already exists");
-            } else {
+            // Overwrite properties if they are not set to an instance
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed = new Embed();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed = new Embed();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed = new Embed();
+
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed.Image = new Image();
+
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
+
+            var config = Parser.Serialize(newConfig);
+
+            if (!Directory.Exists(configLocation)) {
                 try {
                     Directory.CreateDirectory(configLocation);
-                    Console.WriteLine("Config directory \"" + configLocation + "\" has been created!");
+                    Logging.Log.Info("Config directory \"" + configLocation + "\" has been created!");
+                    returnValue = true;
                 } catch (Exception e) {
                     new Error() {
                         IsTerminating = true,
@@ -48,25 +64,41 @@ namespace TwitchNotifier.src.config {
                         Exception = e
                     }.WriteError();
                 }
+
+                Console.WriteLine("Press any key to exit the application...");
+                Console.ReadKey();
             }
 
             if (!File.Exists(configFileLocation)) {
                 File.WriteAllText(configFileLocation, config);
                 Console.WriteLine("Config file has been written to \"" + configFileLocation + "\"");
+                returnValue = true;
             }
+
+            return returnValue;
         }
 
 
-        public static EventObject GetEventObjectByTwitchChannelName(string eventName, string username) {
-            EventObject returnValue = null;
+        /// <summary>
+        /// Returns all EventObjects by the event name of a twitch channel
+        /// </summary>
+        /// <param name="eventName">The name of the event</param>
+        /// <param name="username">The username / channel name</param>
+        /// <returns>A Dictionary of EventObjects in form of <b>Dictionary&lt;string, object&gt;</b></returns>
+        public static Dictionary<string, object> GetEventObjectsByTwitchChannelName(string eventName, string username) {
+            Dictionary<string, object> returnValue = new Dictionary<string, object>();
             var deserializer = new DeserializerBuilder().Build();
-            //var config = deserializer.Deserialize<Config>(File.ReadAllText(configFileLocation, Encoding.UTF8));
             var config = deserializer.Deserialize<dynamic>(File.ReadAllText(configFileLocation, Encoding.UTF8));
-            var eventNodes = (Event)config["TwitchNotifier"][eventName];
-            
-            // eventNode is the key node for all settings below each event
-            foreach (var eventNode in typeof(Event).GetProperties()) {
-                var eventNodeObjects = ((EventObject)eventNode.GetValue(eventNodes)).Twitch.Usernames;
+            var eventNodes = config["TwitchNotifier"][eventName];
+
+            foreach (var listElement in eventNodes) {
+                // The matched usernames from one eventnode (eg.: "StreamerOption1")
+                var userNamesMatched = ((List<object>)listElement.Value["Twitch"]["Usernames"]).Where(x => x.ToString() == username).ToList();
+
+                if (userNamesMatched.Count > 0) {
+                    var a = listElement.Value;
+                    returnValue.Add(listElement.Key.ToString(), listElement.Value);
+                }
             }
 
             return returnValue;
@@ -82,8 +114,8 @@ namespace TwitchNotifier.src.config {
     /// Contains the complete configuration
     /// </summary>
     public class TwitchNotifierSettings {
-        public Event OnStreamStart { get; set; } = new Event();
-        public Event OnStreamEnd { get; set; } = new Event();
+        public Event OnStreamOnline { get; set; } = new Event();
+        public Event OnStreamOffline { get; set; } = new Event();
         public Event OnFollow { get; set; } = new Event();
     }
 
@@ -101,7 +133,7 @@ namespace TwitchNotifier.src.config {
     /// </summary>
     public class EventObject {
         public TwitchListenerSettings Twitch { get; set; } = new TwitchListenerSettings();
-        public Embed Embed { get; set; } = new Embed();
+        public DiscordEmbed Discord { get; set; } = new DiscordEmbed();
         public string WebHookUrl { get; set; } = "The Discord Webhook URL";
     }
 
@@ -118,8 +150,24 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Twitch channel which are creating events
     /// </summary>
     public class TwitchSettings {
-        public string ClientID { get; set; } = "The Client ID of your Twitch app (developer portal)";
+        public string ClientID { get; set; } = "Your Client ID";
         public string AccessToken { get; set; } = "Your App Access Token";
+    }
+
+
+    /// <summary>
+    /// The thumbnail (upper right corner of embed)
+    /// </summary>
+    public class Thumbnail {
+        public string Url = "%Channel.User.Logo%";
+    }
+
+
+    /// <summary>
+    /// The thumbnail (upper right corner of embed)
+    /// </summary>
+    public class Image {
+        public string Url = "%Stream.ThumbnailUrl%";
     }
 
 
@@ -127,16 +175,16 @@ namespace TwitchNotifier.src.config {
     /// The author of the embed
     /// </summary>
     public class EmbedAuthor {
-        public string Name { get; set; } = "The author's name for this message";
-        public string IconUrl { get; set; } = "The URL of the author's image";
-        public string Url { get; set; } = "The URL when the author's name is clicked";
+        public string Name { get; set; } = "Stream Announcer 📢";
+        public string IconUrl { get; set; } = "%Channel.User.Logo%";
+        public string Url { get; set; } = "%Channel.User.Url%";
     }
 
 
     /// <summary>
     /// The fields for the embed (max = 25)
     /// </summary>
-    public class EmbedFields {
+    public class EmbedField {
         public string Name { get; set; } = "Name of the field (max 256 chars)";
         public string Value { get; set; } = "Value of the field (max 1024 chars)";
         public bool Inline { get; set; } = false;
@@ -148,7 +196,17 @@ namespace TwitchNotifier.src.config {
     /// </summary>
     public class EmbedFooter {
         public string Text { get; set; } = "The footer text (max 2048 chars)";
-        public string IconUrl { get; set; } = "The URL of the footer's image";
+        public string IconUrl { get; set; } = "%Channel.User.Logo%";
+    }
+
+
+    /// <summary>
+    /// The webhook user that sends the embed (to overwrite the existing data from Discord)
+    /// </summary>
+    public class DiscordEmbed {
+        public string Username { get; set; } = "%Channel.Name%";
+        public string AvatarUrl { get; set; } = "%Channel.User.Url%";
+        public Embed Embed { get; set; } = new Embed();
     }
 
 
@@ -156,13 +214,26 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Discord embed
     /// </summary>
     public class Embed {
-        public string Title { get; set; } = "Something has happened at %Username%'s channel!";
-        public string Url { get; set; } = "The title's URL which can be clicked";
-        public string Description { get; set; } = "The embeds text / description";
-        public string Color { get; set; } = "The embeds hex color (like #5555FF)";
+        public string Title { get; set; } = "%Channel.Name% went online!";
+        public string Url { get; set; } = "%Channel.User.Url%";
+        public string Description { get; set; } = "What are you waiting for?!\\nGo check it out now!";
+        public string Color { get; set; } = "#5555FF";
         public bool Timestamp { get; set; } = true;
+        public Thumbnail Thumbnail { get; set; } //= new Thumbnail();
+        public Image Image { get; set; } //= new Image();
         public EmbedAuthor Author { get; set; } = new EmbedAuthor();
-        public EmbedFields Fields { get; set; } = new EmbedFields();
+        public List<EmbedField> Fields { get; set; } = new List<EmbedField>() {
+            new EmbedField() {
+                Name = "Unique Field Name 1",
+                Value = "Value of field 1",
+                Inline = false
+            },
+            new EmbedField() {
+                Name = "Unique Field Name 2",
+                Value = "Value of field 2",
+                Inline = false
+            },
+        };
         public EmbedFooter Footer { get; set; } = new EmbedFooter();
     }
 }

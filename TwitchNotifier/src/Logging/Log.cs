@@ -1,16 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using TwitchNotifier.src.config;
 
 namespace TwitchNotifier.src.Logging {
-    class Logging {
+    class Log {
+
+        private static void LogToFile(string text) {
+            try {
+                File.AppendAllText(Config.configLocation + Path.DirectorySeparatorChar + GetLogFileDateString() + ".log", text + Environment.NewLine);
+            } catch (Exception e) {
+                Error(e.ToString());
+            }
+        }
+
 
         /// <summary>
-        /// For basic logging
+        /// Log debug information (console = cyan) + file
         /// </summary>
         /// <param name="text">The text to log</param>
-        public static void Log(string text) {
+        public static void Debug(string text) {
+            var colorBeforeChange = Console.ForegroundColor;
+
+            Console.Write("[" + GetLogDateString() + "] ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write("DBG: ");
+
+            Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
+            LogToFile(text);
         }
 
 
@@ -21,6 +38,7 @@ namespace TwitchNotifier.src.Logging {
         public static void Info(string text) {
             var colorBeforeChange = Console.ForegroundColor;
             
+            Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("INF: ");
 
@@ -36,6 +54,7 @@ namespace TwitchNotifier.src.Logging {
         public static void Warn(string text) {
             var colorBeforeChange = Console.ForegroundColor;
 
+            Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("WRN: ");
 
@@ -51,11 +70,28 @@ namespace TwitchNotifier.src.Logging {
         public static void Error(string text) {
             var colorBeforeChange = Console.ForegroundColor;
 
+            Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("WRN: ");
+            Console.Write("ERR: ");
 
             Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
+        }
+
+
+        /// <summary>
+        /// Gets the date and time for console logging (eg.: 2021-05-21 09:00:01)
+        /// </summary>
+        public static string GetLogDateString() {
+            return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+
+
+        /// <summary>
+        /// Gets the date and time for file logging (eg.: 2021-05-21_09-00-01)
+        /// </summary>
+        public static string GetLogFileDateString() {
+            return DateTime.Now.ToString("yyyy-MM-dd");
         }
     }
 }
