@@ -21,7 +21,7 @@ namespace TwitchNotifier.src.config {
         /// <summary>
         /// The full path of the directory in which the config lays
         /// </summary>
-        private static string configLocation = appdataDirectory + Path.DirectorySeparatorChar + System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+        public static string configLocation = appdataDirectory + Path.DirectorySeparatorChar + Assembly.GetExecutingAssembly().GetName().Name;
 
         /// <summary>
         /// The full path of the config file
@@ -32,7 +32,9 @@ namespace TwitchNotifier.src.config {
         /// <summary>
         /// Create a new config file and its directory if it does not exist!
         /// </summary>
-        public void CreateConfig() {
+        /// <returns><code>true</code> if config got created. <code>false</code> if config already exists</returns>
+        public bool CreateConfig() {
+            var returnValue = false;
             var config = Parser.Serialize(this);
 
             if (Directory.Exists(configLocation)) {
@@ -41,6 +43,7 @@ namespace TwitchNotifier.src.config {
                 try {
                     Directory.CreateDirectory(configLocation);
                     Console.WriteLine("Config directory \"" + configLocation + "\" has been created!");
+                    returnValue = true;
                 } catch (Exception e) {
                     new Error() {
                         IsTerminating = true,
@@ -53,20 +56,33 @@ namespace TwitchNotifier.src.config {
             if (!File.Exists(configFileLocation)) {
                 File.WriteAllText(configFileLocation, config);
                 Console.WriteLine("Config file has been written to \"" + configFileLocation + "\"");
+                returnValue = true;
             }
+
+            return returnValue;
         }
 
 
-        public static EventObject GetEventObjectByTwitchChannelName(string eventName, string username) {
-            EventObject returnValue = null;
+        /// <summary>
+        /// Returns all EventObjects by the event name of a twitch channel
+        /// </summary>
+        /// <param name="eventName">The name of the event</param>
+        /// <param name="username">The username / channel name</param>
+        /// <returns>A Dictionary of EventObjects in form of <b>Dictionary&lt;string, object&gt;</b></returns>
+        public static Dictionary<string, object> GetEventObjectsByTwitchChannelName(string eventName, string username) {
+            Dictionary<string, object> returnValue = new Dictionary<string, object>();
             var deserializer = new DeserializerBuilder().Build();
-            //var config = deserializer.Deserialize<Config>(File.ReadAllText(configFileLocation, Encoding.UTF8));
             var config = deserializer.Deserialize<dynamic>(File.ReadAllText(configFileLocation, Encoding.UTF8));
-            var eventNodes = (Event)config["TwitchNotifier"][eventName];
-            
-            // eventNode is the key node for all settings below each event
-            foreach (var eventNode in typeof(Event).GetProperties()) {
-                var eventNodeObjects = ((EventObject)eventNode.GetValue(eventNodes)).Twitch.Usernames;
+            var eventNodes = config["TwitchNotifier"][eventName];
+
+            foreach (var listElement in eventNodes) {
+                // The matched usernames from one eventnode (eg.: "StreamerOption1")
+                var userNamesMatched = ((List<object>)listElement.Value["Twitch"]["Usernames"]).Where(x => x.ToString() == username).ToList();
+
+                if (userNamesMatched.Count > 0) {
+                    var a = listElement.Value;
+                    returnValue.Add(listElement.Key.ToString(), listElement.Value);
+                }
             }
 
             return returnValue;
@@ -82,8 +98,8 @@ namespace TwitchNotifier.src.config {
     /// Contains the complete configuration
     /// </summary>
     public class TwitchNotifierSettings {
-        public Event OnStreamStart { get; set; } = new Event();
-        public Event OnStreamEnd { get; set; } = new Event();
+        public Event OnStreamOnline { get; set; } = new Event();
+        public Event OnStreamOffline { get; set; } = new Event();
         public Event OnFollow { get; set; } = new Event();
     }
 
@@ -136,7 +152,7 @@ namespace TwitchNotifier.src.config {
     /// <summary>
     /// The fields for the embed (max = 25)
     /// </summary>
-    public class EmbedFields {
+    public class EmbedField {
         public string Name { get; set; } = "Name of the field (max 256 chars)";
         public string Value { get; set; } = "Value of the field (max 1024 chars)";
         public bool Inline { get; set; } = false;
@@ -162,7 +178,18 @@ namespace TwitchNotifier.src.config {
         public string Color { get; set; } = "The embeds hex color (like #5555FF)";
         public bool Timestamp { get; set; } = true;
         public EmbedAuthor Author { get; set; } = new EmbedAuthor();
-        public EmbedFields Fields { get; set; } = new EmbedFields();
+        public List<EmbedField> Fields { get; set; } = new List<EmbedField>() {
+            new EmbedField() {
+                Name = "Unique Field Name 1",
+                Value = "Value of field 1",
+                Inline = false
+            },
+            new EmbedField() {
+                Name = "Unique Field Name 2",
+                Value = "Value of field 2",
+                Inline = false
+            },
+        };
         public EmbedFooter Footer { get; set; } = new EmbedFooter();
     }
 }
