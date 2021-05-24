@@ -10,6 +10,7 @@ using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchNotifier.src.config;
 using TwitchNotifier.src.Logging;
+using TwitchNotifier.src.WebRequest;
 using YamlDotNet.Serialization;
 
 namespace TwitchNotifier.src.Twitch {
@@ -21,7 +22,6 @@ namespace TwitchNotifier.src.Twitch {
         private TwitchAPI API;
 
         public LiveMonitoring() {
-            //ConfigureLiveMonitorAsync();
             Task.Run(() => ConfigureLiveMonitorAsync()).GetAwaiter().GetResult();
         }
 
@@ -30,11 +30,12 @@ namespace TwitchNotifier.src.Twitch {
             var deserializer = new DeserializerBuilder().Build();
             try {
 
-                var config = deserializer.Deserialize<Config>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
+                //var config = deserializer.Deserialize<Config>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
+                var config = deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
 
                 API = new TwitchAPI();
-                API.Settings.ClientId = config.Settings.ClientID;
-                API.Settings.AccessToken = config.Settings.AccessToken;
+                API.Settings.ClientId = config["Settings"]["ClientID"];
+                API.Settings.AccessToken = config["Settings"]["AccessToken"];
 
                 Monitor = new LiveStreamMonitorService(API, 5);
 
@@ -42,11 +43,14 @@ namespace TwitchNotifier.src.Twitch {
                 var usernames = new List<string>();
                 foreach (var property in typeof(TwitchNotifierSettings).GetProperties()) {
                     // Events like "OnStreamStart", "OnStreamEnd", "OnFollow", ...
-                    var twitchEvent = property.GetValue(config.TwitchNotifier);
+                    //var twitchEvent = property.GetValue(config["TwitchNotifier"]);
+                    var twitchEvent = config["TwitchNotifier"][property.Name];
 
                     // eventNode is the key node for all settings below each event
                     foreach (var eventNode in typeof(Event).GetProperties()) {
-                        usernames.AddRange(((EventObject)eventNode.GetValue(twitchEvent)).Twitch.Usernames);
+                        //usernames.AddRange(((EventObject)eventNode.GetValue(twitchEvent)).Twitch.Usernames);
+                        List<string> usernameList = ((List<object>)twitchEvent[eventNode.Name]["Twitch"]["Usernames"]).Select(x => (string)x).ToList();
+                        usernames.AddRange(usernameList);
                     }
                 }
 
@@ -81,15 +85,32 @@ namespace TwitchNotifier.src.Twitch {
 
         private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e) {
             // What gets updated here?
+
             Logging.Logging.Info("Update: " + e.Channel);
         }
 
         private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
+            var configEventName = "OnStreamOffline";
             Logging.Logging.Info("Offline: " + e.Channel);
+            Logging.Logging.Debug(e.Channel + " went offline! | Sender object: " + sender.ToString());
+            //Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
         }
 
         private void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
+            var configEventName = "OnStreamOnline";
             Logging.Logging.Info("Online: " + e.Channel);
+            Logging.Logging.Debug(e.Channel + " went online! | Sender object: " + sender.ToString());
+            var channelOffline = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+
+            if (channelOffline.Count > 0) {
+                foreach (var eventObject in channelOffline) {
+                    var webRequest = new WebRequest.WebRequest() {
+                        webHookUrl = (dynamic)channelOffline["WebHookUrl"],
+                        embed = (dynamic)channelOffline["Embed"]
+                    };
+                }
+                //webRequest.
+            }
         }
     }
 }
