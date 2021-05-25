@@ -35,7 +35,17 @@ namespace TwitchNotifier.src.config {
         /// <returns><code>true</code> if config got created. <code>false</code> if config already exists</returns>
         public bool CreateConfig() {
             var returnValue = false;
-            var config = Parser.Serialize(this);
+            var newConfig = new Config();
+            
+            // Overwrite properties if they are not set to an instance
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Embed.Thumbnail = new Thumbnail();
+
+            var config = Parser.Serialize(newConfig);
 
             if (Directory.Exists(configLocation)) {
                 // Console.WriteLine("Config directory \"" + configLocation + "\" already exists");
@@ -140,6 +150,22 @@ namespace TwitchNotifier.src.config {
 
 
     /// <summary>
+    /// The thumbnail (upper right corner of embed)
+    /// </summary>
+    public class Thumbnail {
+        public string Url = "The url of the thumbnail (top right)";
+    }
+
+
+    /// <summary>
+    /// The thumbnail (upper right corner of embed)
+    /// </summary>
+    public class Image {
+        public string Url = "The url of the image";
+    }
+
+
+    /// <summary>
     /// The author of the embed
     /// </summary>
     public class EmbedAuthor {
@@ -177,6 +203,8 @@ namespace TwitchNotifier.src.config {
         public string Description { get; set; } = "The embeds text / description";
         public string Color { get; set; } = "The embeds hex color (like #5555FF)";
         public bool Timestamp { get; set; } = true;
+        public Thumbnail Thumbnail { get; set; } //= new Thumbnail();
+        public Image Image { get; set; } //= new Image();
         public EmbedAuthor Author { get; set; } = new EmbedAuthor();
         public List<EmbedField> Fields { get; set; } = new List<EmbedField>() {
             new EmbedField() {
