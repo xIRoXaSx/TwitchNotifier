@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using TwitchNotifier.src.config;
 
-namespace TwitchNotifier.src.WebRequest {
+namespace TwitchNotifier.src.WebRequests {
     class WebRequest {
 
         public string webHookUrl { get; set; }
@@ -32,11 +32,13 @@ namespace TwitchNotifier.src.WebRequest {
             var request = System.Net.WebRequest.Create(webHookUrl);
 
             embed.Color = Convert.ToInt32(embed.Color.Replace("#", ""), 16).ToString();
+
             var embedJson = "{\"embeds\": [" +
                 Parser.GetEmbedJson(embed) +
             "]}";
 
-            File.WriteAllText("jsonfile.json", embedJson);
+            // Enable for debugging purposes:
+            //File.WriteAllText("jsonfile.json", embedJson);
 
             request.ContentType = "application/json";
             request.Method = "POST";
@@ -46,19 +48,15 @@ namespace TwitchNotifier.src.WebRequest {
                 streamWriter.Flush();
             }
 
-            // === Thorws 400 Bad request
             var response = (HttpWebResponse)request.GetResponse();
             using (var streamReader = new StreamReader(response.GetResponseStream())) {
                 var responseText = streamReader.ReadToEnd();
-                Logging.Logging.Debug(responseText);
+                Logging.Log.Debug(responseText);
             }
 
             
 
             return returnValue;
         }
-
-
-
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using TwitchNotifier.src.config;
 
 namespace TwitchNotifier.src.Logging {
-    class Logging {
+    class Log {
 
         private static void LogToFile(string text) {
             File.AppendAllText(Config.configLocation + Path.DirectorySeparatorChar + GetLogFileDateString() + ".log", text);
