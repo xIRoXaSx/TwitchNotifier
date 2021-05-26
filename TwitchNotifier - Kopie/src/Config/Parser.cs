@@ -4,7 +4,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using TwitchNotifier.src.Placeholders;
+using TwitchNotifier.src;
 using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src.config {
@@ -78,7 +78,7 @@ namespace TwitchNotifier.src.config {
             if (parsedJson["timestamp"].ToString().ToLower() == "true") {
                 parsedJson["timestamp"] = DateTime.Now;
             } else {
-                parsedJson["timestamp"].Remove();
+                parsedJson.Property("timestamp").Remove();
             }
 
             return parsedJson.ToString();

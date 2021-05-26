@@ -5,11 +5,11 @@ using System.Net;
 using System.Text;
 using TwitchNotifier.src.config;
 
-namespace TwitchNotifier.src.WebRequests {
+namespace TwitchNotifier.src {
     class WebRequest {
 
         public string webHookUrl { get; set; }
-        public DiscordEmbed discordEmbed { get; set; }
+        public Embed embed { get; set; }
 
 
         ///// <summary>
@@ -31,14 +31,11 @@ namespace TwitchNotifier.src.WebRequests {
             bool returnValue = false;
             var request = System.Net.WebRequest.Create(webHookUrl);
 
-            discordEmbed.Embed.Color = Convert.ToInt32(discordEmbed.Embed.Color.Replace("#", ""), 16).ToString();
-            var embedJson = "{" +
-                "\"avatar_url\":\"" + discordEmbed.AvatarUrl + "\"," +
-                "\"username\":\"" + discordEmbed.Username + "\"," +
-                "\"embeds\": [" +
-                    Parser.GetEmbedJson(discordEmbed.Embed) +
-                "]" +
-            "}";
+            embed.Color = Convert.ToInt32(embed.Color.Replace("#", ""), 16).ToString();
+
+            var embedJson = "{\"embeds\": [" +
+                Parser.GetEmbedJson(embed) +
+            "]}";
 
             // Enable for debugging purposes:
             //File.WriteAllText("jsonfile.json", embedJson);
@@ -54,8 +51,10 @@ namespace TwitchNotifier.src.WebRequests {
             var response = (HttpWebResponse)request.GetResponse();
             using (var streamReader = new StreamReader(response.GetResponseStream())) {
                 var responseText = streamReader.ReadToEnd();
-                Logging.Log.Debug(responseText);
+                Log.Debug(responseText);
             }
+
+            
 
             return returnValue;
         }
