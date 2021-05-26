@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using TwitchNotifier.src.ErrorHandling;
+using TwitchNotifier.src;
 using YamlDotNet.Serialization;
 
 namespace TwitchNotifier.src.config {
@@ -36,19 +36,14 @@ namespace TwitchNotifier.src.config {
         public bool CreateConfig() {
             var returnValue = false;
             var newConfig = new Config();
-
+            
             // Overwrite properties if they are not set to an instance
-            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed = new Embed();
-            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed = new Embed();
-            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed = new Embed();
-
-            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed.Image = new Image();
-            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed.Image = new Image();
-            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed.Image = new Image();
-
-            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
-            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
-            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Discord.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Embed.Image = new Image();
+            newConfig.TwitchNotifier.OnFollow.StreamerOption1.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOnline.StreamerOption1.Embed.Thumbnail = new Thumbnail();
+            newConfig.TwitchNotifier.OnStreamOffline.StreamerOption1.Embed.Thumbnail = new Thumbnail();
 
             var config = Parser.Serialize(newConfig);
 
@@ -132,7 +127,7 @@ namespace TwitchNotifier.src.config {
     /// </summary>
     public class EventObject {
         public TwitchListenerSettings Twitch { get; set; } = new TwitchListenerSettings();
-        public DiscordEmbed Discord { get; set; } = new DiscordEmbed();
+        public Embed Embed { get; set; } = new Embed();
         public string WebHookUrl { get; set; } = "The Discord Webhook URL";
     }
 
@@ -196,16 +191,6 @@ namespace TwitchNotifier.src.config {
     public class EmbedFooter {
         public string Text { get; set; } = "The footer text (max 2048 chars)";
         public string IconUrl { get; set; } = "The URL of the footer's image";
-    }
-
-
-    /// <summary>
-    /// The webhook user that sends the embed (to overwrite the existing data from Discord)
-    /// </summary>
-    public class DiscordEmbed {
-        public string Username { get; set; } = "%Channel.Name%";
-        public string AvatarUrl { get; set; } = "%Channel.User.Url%";
-        public Embed Embed { get; set; } = new Embed();
     }
 
 

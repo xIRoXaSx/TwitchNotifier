@@ -1,5 +1,9 @@
-﻿using TwitchNotifier.src.config;
+﻿using System;
+using System.Linq;
+using TwitchNotifier.src.config;
 using TwitchNotifier.src.Twitch;
+using TwitchNotifier.src;
+using YamlDotNet.Serialization;
 
 namespace TwitchNotifier {
     class Program {
