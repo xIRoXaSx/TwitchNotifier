@@ -158,7 +158,7 @@ namespace TwitchNotifier.src.config {
     /// The thumbnail (upper right corner of embed)
     /// </summary>
     public class Thumbnail {
-        public string Url = "The url of the thumbnail (top right)";
+        public string Url = "%Channel.User.Logo%";
     }
 
 
@@ -166,7 +166,7 @@ namespace TwitchNotifier.src.config {
     /// The thumbnail (upper right corner of embed)
     /// </summary>
     public class Image {
-        public string Url = "The url of the image";
+        public string Url = "%Stream.ThumbnailUrl%";
     }
 
 
@@ -174,9 +174,9 @@ namespace TwitchNotifier.src.config {
     /// The author of the embed
     /// </summary>
     public class EmbedAuthor {
-        public string Name { get; set; } = "The author's name for this message";
-        public string IconUrl { get; set; } = "The URL of the author's image";
-        public string Url { get; set; } = "The URL when the author's name is clicked";
+        public string Name { get; set; } = "Stream Announcer 📢";
+        public string IconUrl { get; set; } = "%Channel.User.Logo%";
+        public string Url { get; set; } = "%Channel.User.Url%";
     }
 
 
@@ -195,7 +195,7 @@ namespace TwitchNotifier.src.config {
     /// </summary>
     public class EmbedFooter {
         public string Text { get; set; } = "The footer text (max 2048 chars)";
-        public string IconUrl { get; set; } = "The URL of the footer's image";
+        public string IconUrl { get; set; } = "%Channel.User.Logo%";
     }
 
 
@@ -213,10 +213,10 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Discord embed
     /// </summary>
     public class Embed {
-        public string Title { get; set; } = "Something has happened at %Username%'s channel!";
-        public string Url { get; set; } = "The title's URL which can be clicked";
-        public string Description { get; set; } = "The embeds text / description";
-        public string Color { get; set; } = "The embeds hex color (like #5555FF)";
+        public string Title { get; set; } = "%Channel.Name% went online!";
+        public string Url { get; set; } = "%Channel.User.Url%";
+        public string Description { get; set; } = "What are you waiting for?!\\nGo check it out now!";
+        public string Color { get; set; } = "#5555FF";
         public bool Timestamp { get; set; } = true;
         public Thumbnail Thumbnail { get; set; } //= new Thumbnail();
         public Image Image { get; set; } //= new Image();
