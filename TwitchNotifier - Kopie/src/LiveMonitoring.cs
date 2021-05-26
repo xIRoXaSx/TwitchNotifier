@@ -8,10 +8,9 @@ using TwitchLib.Api;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
+using TwitchNotifier.src;
 using TwitchNotifier.src.config;
 using TwitchNotifier.src.Helper;
-using TwitchNotifier.src.Logging;
-using TwitchNotifier.src.WebRequests;
 using YamlDotNet.Serialization;
 
 namespace TwitchNotifier.src.Twitch {
@@ -124,10 +123,10 @@ namespace TwitchNotifier.src.Twitch {
                         }
                     };
 
-                    var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
+                    var embed = Parser.Deserialize(typeof(Embed), ((dynamic)eventObject.Value)["Embed"], placeholderHelper);
                     new WebRequest() {
                         webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
-                        discordEmbed = embed
+                        embed = embed
                     }.SendRequest();
                 }
             }
