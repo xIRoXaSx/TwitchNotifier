@@ -52,12 +52,10 @@ namespace TwitchNotifier.src.config {
 
             var config = Parser.Serialize(newConfig);
 
-            if (Directory.Exists(configLocation)) {
-                // Console.WriteLine("Config directory \"" + configLocation + "\" already exists");
-            } else {
+            if (!Directory.Exists(configLocation)) {
                 try {
                     Directory.CreateDirectory(configLocation);
-                    Console.WriteLine("Config directory \"" + configLocation + "\" has been created!");
+                    Logging.Log.Info("Config directory \"" + configLocation + "\" has been created!");
                     returnValue = true;
                 } catch (Exception e) {
                     new Error() {
@@ -66,6 +64,9 @@ namespace TwitchNotifier.src.config {
                         Exception = e
                     }.WriteError();
                 }
+
+                Console.WriteLine("Press any key to exit the application...");
+                Console.ReadKey();
             }
 
             if (!File.Exists(configFileLocation)) {
@@ -149,7 +150,7 @@ namespace TwitchNotifier.src.config {
     /// Settings for the Twitch channel which are creating events
     /// </summary>
     public class TwitchSettings {
-        public string ClientID { get; set; } = "The Client ID of your Twitch app (developer portal)";
+        public string ClientID { get; set; } = "Your Client ID";
         public string AccessToken { get; set; } = "Your App Access Token";
     }
 
