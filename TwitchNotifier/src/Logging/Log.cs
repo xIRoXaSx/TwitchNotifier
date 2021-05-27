@@ -1,14 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using TwitchNotifier.src.config;
 
 namespace TwitchNotifier.src.Logging {
     class Log {
 
         private static void LogToFile(string text) {
-            File.AppendAllText(Config.configLocation + Path.DirectorySeparatorChar + GetLogFileDateString() + ".log", text);
+            try {
+                File.AppendAllText(Config.configLocation + Path.DirectorySeparatorChar + GetLogFileDateString() + ".log", text + Environment.NewLine);
+            } catch (Exception e) {
+                Error(e.ToString());
+            }
         }
 
 

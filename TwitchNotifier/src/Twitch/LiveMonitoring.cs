@@ -75,7 +75,8 @@ namespace TwitchNotifier.src.Twitch {
 
         private void Monitor_OnChannelsSet(object sender, OnChannelsSetArgs e) {
             Log.Info("Channel list has been set!");
-            Log.Info("  > Channles: " + string.Join(", ", e.Channels));
+            Log.Debug("  > Channles: ");
+            e.Channels.ForEach(x => Log.Debug("    - " + x));
         }
 
         private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e) {
@@ -95,10 +96,31 @@ namespace TwitchNotifier.src.Twitch {
         /// </summary>
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
-        private void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
+        private async void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
             var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
             Log.Info("Offline: " + e.Channel);
             Log.Debug(e.Channel + " went offline!");
+
+            var cacheEntry = new CacheEntry() {
+                Key = e.Stream.UserId,
+                Value = e.Stream.UserId
+            };
+            
+            if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                var placeholderHelper = new PlaceholderHelper() {
+                    Stream = e.Stream,
+                    Channel = new Channel() {
+                        Name = e.Channel,
+                        User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
+                    }
+                };
+
+                SendEmbed(placeholderHelper, channels);
+            } else {
+                Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
+                Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+            }
         }
 
 
@@ -112,18 +134,38 @@ namespace TwitchNotifier.src.Twitch {
             var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
             Log.Info("Online: " + e.Channel);
             Log.Debug(e.Channel + " went online!");
-            var channelOnline = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
 
-            if (channelOnline.Count > 0) {
-                foreach (var eventObject in channelOnline) {
-                    var placeholderHelper = new PlaceholderHelper() {
-                        Stream = e.Stream,
-                        Channel = new Channel() {
-                            Name = e.Channel,
-                            User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
-                        }
-                    };
+            var cacheEntry = new CacheEntry() {
+                Key = e.Stream.UserId,
+                Value = e.Stream.UserId
+            };
 
+            if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                var placeholderHelper = new PlaceholderHelper() {
+                    Stream = e.Stream,
+                    Channel = new Channel() {
+                        Name = e.Channel,
+                        User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
+                    }
+                };
+
+                SendEmbed(placeholderHelper, channels);
+            } else {
+                Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
+                Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+            }
+        }
+
+
+        /// <summary>
+        /// Send the embed over the specified URL
+        /// </summary>
+        /// <param name="placeholderHelper">The PlaceholderHelper to replace placeholders for the embed</param>
+        /// <param name="channels">The Dictionary to loop through all Twitch channels</param>
+        private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
+            if (channels.Count > 0) {
+                foreach (var eventObject in channels) {
                     var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
                     new WebRequest() {
                         webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],

@@ -30,7 +30,9 @@ To view all available placeholders please check out [<ARTIKLE>](<WIKI>)
 |Multiple event nodes | Lets you create different messages for the same event listener |✅|
 |Customizable events | Lets you choose which events should trigger messages |✅|
 |Configurable threshold | Lets you configure a threshold which needs to be exceeded before posting another message (channel specifc) |⭕|
-|Implement custom token generation | Will give you the option to enable logging on specified events |📅|
+|Events | Adding multiple events like Follows, ect |⭕|
+|Hotloading | Will hotload modified settings without restarting the app |📅|
+|Implement custom token generation | Will give you the option to set up the Client ID and Token using the app |📅|
 |Configurable Logging | Will give you the option to enable logging on specified events |📅|
 |Local Webinterface | Will give you another way to set up the configuration and add a way to inspect the event history |📅|
 |Grab a cup of coffee | Will give one clear sight |✅⭕📅|
