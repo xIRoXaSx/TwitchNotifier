@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -47,8 +46,15 @@ namespace TwitchNotifier.src.Placeholders {
                 if (selectedToken != null) {
                     // Add more options to Stream.ThumbnailUrl in the future (eg.: change size)
                     selectedToken = match.Groups[1].Value.ToLower() == "stream.thumbnailurl" ? selectedToken.ToString().Replace("{width}", "1920").Replace("{height}", "1080") : selectedToken;
-                    returnValue = returnValue.Replace(match.Groups[0].Value, selectedToken.ToString().Replace("\'", "\'\'")).Replace(@"\n", "\u200B");
 
+                    // Check for matched placeholders which are empty / null (eg. unset game names)
+                    if (string.IsNullOrEmpty(selectedToken.ToString())) {
+                        returnValue = returnValue.Replace(match.Groups[0].Value, "-");
+                    } else {
+                        returnValue = returnValue.Replace(match.Groups[0].Value, selectedToken.ToString().Replace("\'", "\'\'")).Replace(@"\n", "\u200B");
+                    }
+                } else {
+                    returnValue = returnValue.Replace(match.Groups[0].Value, "-");
                 }
             }
 

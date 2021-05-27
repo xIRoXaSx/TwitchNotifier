@@ -7,7 +7,6 @@ namespace TwitchNotifier {
             var config = new Config();
            
             if (!config.CreateConfig()) {
-
                 // Start monitoring (creates and blocks task)
                 new LiveMonitoring();
             }
