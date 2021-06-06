@@ -1,6 +1,6 @@
 ﻿# TwitchNotifier 💬
 ## 📝 Configuration
-1. First of all grab the latest [release]() or build the program yourself.  
+1. First of all grab the latest [release](https://github.com/xIRoXaSx/TwitchNotifier/releases) or build the program locally.  
 2. Put the app somewhere on your client where you can easily access it later on.  
 3. Start the application. It will generate the configuration file in the Folder `TwitchNotifier` in your ApplicationData directory:
     Operating System|Path|Environment Variable / Shortcut
