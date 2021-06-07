@@ -6,12 +6,21 @@ using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using TwitchNotifier.src.Placeholders;
 using TwitchNotifier.src.Helper;
+using System.Linq;
 
 namespace TwitchNotifier.src.config {
     class Parser {
+        public new const string Equals = "==";
+        public const string NotEquals = "!=";
+        public const string GreaterEquals = ">=";
+        public const string LessEquals = "<=";
+        public const string GreaterThan = ">";
+        public const string LessThan = "<";
+        public const string Contains = ".Contains";
+
 
         /// <summary>
-        /// Serialize an object to a string
+        /// Serialize an object to a yaml string
         /// </summary>
         /// <param name="objectToSerialze">The object to serialze</param>
         public static string Serialize(object objectToSerialze) {
@@ -82,6 +91,85 @@ namespace TwitchNotifier.src.config {
             }
 
             return parsedJson.ToString();
+        }
+
+
+        /// <summary>
+        /// Returns the boolean of a condition string
+        /// </summary>
+        /// <param name="condition">The string which contains the condition</param>
+        /// <returns>Default: <c>false</c> if not matched</returns>
+        public static bool CheckEventCondition(string condition) {
+            var returnValue = false;
+            string[] seperatedCondition = null;
+            var matchedLogicalCondition = string.Empty;
+            var listOfSeperators = new[] {
+                Equals,
+                NotEquals,
+                GreaterEquals,
+                LessEquals,
+                GreaterThan,
+                LessThan,
+                Contains
+            };
+
+            // Check if condition contains one of the strings before trying to split it
+            if (listOfSeperators.Any(x => condition.Contains(x))) {
+                foreach (var logicalCondition in listOfSeperators) {
+                    seperatedCondition = condition.Split(logicalCondition, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
+
+                    if (seperatedCondition.Length == 2) {
+                        matchedLogicalCondition = logicalCondition;
+                        break;
+                    }
+                }
+            }
+
+
+            if (!string.IsNullOrEmpty(matchedLogicalCondition)) {
+                int int1, int2;
+                switch (matchedLogicalCondition) {
+                    case Equals:
+                        returnValue = seperatedCondition[0] == seperatedCondition[1];
+                        break;
+                    case NotEquals:
+                        returnValue = seperatedCondition[0] != seperatedCondition[1];
+                        break;
+                    case GreaterEquals:
+                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                            returnValue = int1 >= int2;
+                        }
+
+                        break;
+                    case LessEquals:
+                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                            returnValue = int1 <= int2;
+                        }
+
+                        break;
+                    case GreaterThan:
+                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                            returnValue = int1 > int2;
+                        }
+
+                        break;
+                    case LessThan:
+                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                            returnValue = int1 < int2;
+                        }
+
+                        break;
+
+                    case Contains:
+                        var match = System.Text.RegularExpressions.Regex.Match(seperatedCondition[1], @"\((.*)\)");
+                        if (match.Success) {
+                            returnValue = seperatedCondition[0].Contains(match.Groups[1].Value);
+                        }
+                        break;
+                }
+            }
+
+            return returnValue;
         }
     }
 }

@@ -2,7 +2,7 @@
 ## Description
 Ever wanted to receive **customized** Discord messages when you or your favorite Twitch streamers went **live** without adding another bot to your **Discord** server?  
 You came to the right place if this describes your problem!  
-With TwitchNotifier you can customize which **events** should trigger messages for your Discord server, how they should look like!  
+With TwitchNotifier you can customize which **events** should trigger messages for your Discord server and how they should look like!  
 The setup is quickly done in a few minutes and the integrated **placeholders** will make your life even easier!  
 Sounds too good to be true? Try it out and see! 😊
 ***
@@ -10,13 +10,13 @@ Sounds too good to be true? Try it out and see! 😊
 
 
 ### 📃 Configuration
-For a detailed configuration please check out [<ARTIKLE>](<WIKI>)
+For a detailed configuration please check out [Configuration](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration)
 
 ***
 <br/>
 
 ### 🔗 Placeholders
-To view all available placeholders please check out [<ARTIKLE>](<WIKI>)
+To view all available placeholders please check out [Placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Placeholders)
 ***
 <br/>
 
