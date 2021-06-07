@@ -9,9 +9,7 @@ using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src.Placeholders {
     class Placeholder {
-
         char placeholderEnclosure { get; } = '%';
-
 
         /// <summary>
         /// Replace placeholders with their actual value<br/>
@@ -66,7 +64,6 @@ namespace TwitchNotifier.src.Placeholders {
                 returnValue = returnValue.Replace(@"\n", "\u200B");
             }
 
-            
             return returnValue;
         }
     }

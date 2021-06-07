@@ -9,7 +9,6 @@ using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src.WebRequests {
     class WebRequest {
-
         public string webHookUrl { get; set; }
         public DiscordEmbed discordEmbed { get; set; }
 
@@ -40,7 +39,6 @@ namespace TwitchNotifier.src.WebRequests {
             }
 
             try {
-
                 var response = (HttpWebResponse)request.GetResponse();
             } catch (WebException ex) {
                 if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.TooManyRequests) {

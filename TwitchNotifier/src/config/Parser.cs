@@ -20,7 +20,6 @@ namespace TwitchNotifier.src.config {
         public const string True = "true";
         public const string False = "false";
 
-
         /// <summary>
         /// Serialize an object to a yaml string
         /// </summary>
@@ -32,7 +31,6 @@ namespace TwitchNotifier.src.config {
 
             return serializer.Serialize(objectToSerialze);
         }
-
 
         /// <summary>
         /// Serializes an object to deserialize it into the specified type
@@ -47,7 +45,6 @@ namespace TwitchNotifier.src.config {
             var yml = serializer.Serialize((dynamic)objectToDeserialize);
             return deserializer.Deserialize(yml, type);
         }
-
 
         /// <summary>
         /// Serializes an object to deserialize it into the specified type<br/>
@@ -66,7 +63,6 @@ namespace TwitchNotifier.src.config {
             yml = new Placeholder().ReplacePlaceholders(yml, placeholderHelper);
             return deserializer.Deserialize(yml, type);
         }
-
 
         /// <summary>
         /// Get a json string from the passed embed
@@ -94,7 +90,6 @@ namespace TwitchNotifier.src.config {
 
             return parsedJson.ToString();
         }
-
 
         /// <summary>
         /// Returns the boolean of a condition string
@@ -133,7 +128,6 @@ namespace TwitchNotifier.src.config {
                         }
                     }
                 }
-
 
                 if (!string.IsNullOrEmpty(matchedLogicalCondition)) {
                     int int1, int2;

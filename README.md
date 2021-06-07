@@ -6,6 +6,7 @@ With TwitchNotifier you can customize which **events** should trigger messages f
 The setup is quickly done in a few minutes and the integrated **placeholders** will make your life even easier!  
 Sounds too good to be true? Try it out and see! 😊  
 <br/>
+[![CodeFactor](https://www.codefactor.io/repository/github/xiroxasx/twitchnotifier/badge)](https://www.codefactor.io/repository/github/xiroxasx/twitchnotifier)
 [![Cross-Platform .NET Core](https://github.com/xIRoXaSx/TwitchNotifier/actions/workflows/cross-platform.yml/badge.svg)](https://github.com/xIRoXaSx/TwitchNotifier/actions/workflows/cross-platform.yml)
 ***
 <br/>
