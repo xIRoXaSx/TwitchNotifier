@@ -19,7 +19,6 @@ namespace TwitchNotifier.src.ErrorHandling {
         /// </summary>
         public bool IsTerminating { get; set; } = false;
 
-
         /// <summary>
         /// Write an error to the console
         /// </summary>

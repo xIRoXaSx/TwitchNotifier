@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,11 +26,10 @@ namespace TwitchNotifier.src.Twitch {
             Task.Run(() => ConfigureLiveMonitorAsync()).GetAwaiter().GetResult();
         }
 
-
         private async Task ConfigureLiveMonitorAsync() {
             var deserializer = new DeserializerBuilder().Build();
+            
             try {
-
                 //var config = deserializer.Deserialize<Config>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
                 var config = deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
 
@@ -54,7 +52,6 @@ namespace TwitchNotifier.src.Twitch {
                     }
                 }
 
-                //Monitor.OnStreamUpdate += Monitor_OnStreamUpdate;
                 Monitor.OnStreamOnline += Monitor_OnStreamOnline;
                 Monitor.OnStreamOffline += Monitor_OnStreamOffline;
                 Monitor.OnServiceStarted += Monitor_OnServiceStarted;
@@ -70,7 +67,7 @@ namespace TwitchNotifier.src.Twitch {
             } catch (Exception e) {
                 Console.WriteLine(e);
             }
-            
+
             await Task.Delay(-1);
         }
 
@@ -83,13 +80,6 @@ namespace TwitchNotifier.src.Twitch {
         private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e) {
             Log.Info("Service has started!");
         }
-
-        private void Monitor_OnStreamUpdate(object sender, OnStreamUpdateArgs e) {
-            // What gets updated here?
-
-            Log.Info("Update: " + e.Channel);
-        }
-
 
         /// <summary>
         /// Called when stream went offlne<br/>
@@ -111,7 +101,7 @@ namespace TwitchNotifier.src.Twitch {
                 var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
                 var placeholderHelper = new PlaceholderHelper() {
                     Stream = e.Stream,
-                    Channel = new Channel() {
+                    Channel = new PlaceHolderChannelHelper() {
                         Name = e.Channel,
                         User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
                     }
@@ -123,7 +113,6 @@ namespace TwitchNotifier.src.Twitch {
                 Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
             }
         }
-
 
         /// <summary>
         /// Called when stream went live<br/>
@@ -144,7 +133,7 @@ namespace TwitchNotifier.src.Twitch {
                 var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
                 var placeholderHelper = new PlaceholderHelper() {
                     Stream = e.Stream,
-                    Channel = new Channel() {
+                    Channel = new PlaceHolderChannelHelper() {
                         Name = e.Channel,
                         User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
                     }
@@ -156,7 +145,6 @@ namespace TwitchNotifier.src.Twitch {
                 Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
             }
         }
-
 
         /// <summary>
         /// Send the embed over the specified URL
@@ -173,7 +161,6 @@ namespace TwitchNotifier.src.Twitch {
                     } catch {
                         Log.Warn("Node \"Condition\" could not be found on eventnode \"" + eventObject.Key + "\"... Defaulted to empty condition!");
                     }
-                    
                     
                     if (Parser.CheckEventCondition(condition)) {
                         var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);

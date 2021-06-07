@@ -4,7 +4,6 @@ using TwitchNotifier.src.config;
 
 namespace TwitchNotifier.src.Logging {
     class Log {
-
         private static void LogToFile(string text) {
             try {
                 var logPath = Config.configLocation + Path.DirectorySeparatorChar + "logs" + Path.DirectorySeparatorChar;
@@ -18,7 +17,6 @@ namespace TwitchNotifier.src.Logging {
                 Error(e.ToString());
             }
         }
-
 
         /// <summary>
         /// Log debug information (console = cyan) + file
@@ -36,7 +34,6 @@ namespace TwitchNotifier.src.Logging {
             LogToFile(text);
         }
 
-
         /// <summary>
         /// Log information (console = green)
         /// </summary>
@@ -51,7 +48,6 @@ namespace TwitchNotifier.src.Logging {
             Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
         }
-
 
         /// <summary>
         /// Log warnings (console = yellow)
@@ -68,7 +64,6 @@ namespace TwitchNotifier.src.Logging {
             Console.WriteLine(text);
         }
 
-
         /// <summary>
         /// Log errors (console = red)
         /// </summary>
@@ -84,14 +79,12 @@ namespace TwitchNotifier.src.Logging {
             Console.WriteLine(text);
         }
 
-
         /// <summary>
         /// Gets the date and time for console logging (eg.: 2021-05-21 09:00:01)
         /// </summary>
         public static string GetLogDateString() {
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         }
-
 
         /// <summary>
         /// Gets the date and time for file logging (eg.: 2021-05-21_09-00-01)
