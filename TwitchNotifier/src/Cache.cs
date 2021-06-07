@@ -74,7 +74,7 @@ namespace TwitchNotifier.src {
         /// <summary>
         /// The value of the CacheEntry
         /// </summary>
-        public string Value { get; set; }
+        public object Value { get; set; }
 
         /// <summary>
         /// Determines whether the CacheEntry should be added to the MemoryCache or not

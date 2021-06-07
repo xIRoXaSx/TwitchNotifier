@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using TwitchNotifier.src.config;
+using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src.WebRequests {
     class WebRequest {
@@ -24,6 +25,7 @@ namespace TwitchNotifier.src.WebRequests {
             var embedJson = "{" +
                 "\"avatar_url\":\"" + discordEmbed.AvatarUrl + "\"," +
                 "\"username\":\"" + discordEmbed.Username + "\"," +
+                "\"content\":\"" + discordEmbed.Content + "\"," +
                 "\"embeds\": [" +
                     Parser.GetEmbedJson(discordEmbed.Embed) +
                 "]" +
@@ -37,7 +39,27 @@ namespace TwitchNotifier.src.WebRequests {
                 streamWriter.Flush();
             }
 
-            var response = (HttpWebResponse)request.GetResponse();
+            try {
+
+                var response = (HttpWebResponse)request.GetResponse();
+            } catch (WebException ex) {
+                if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.TooManyRequests) {
+                    // Cache object and get timeout and calc queue time to resend
+                    var cacheEntry = new CacheEntry() {
+                        AddIfNotCached = true,
+                        CreateSha256Sum = false,
+                        ExpirationTime = DateTime.Now.AddHours(1),
+                        Key = DateTime.Now.ToString(),
+                        Value = new CacheHelper() {
+                            EmbedJson = embedJson,
+                            WebRequest = request
+                        }
+                    };
+
+                    Cache.AddCacheEntry(cacheEntry);
+                }
+            }
+
             return returnValue;
         }
     }
