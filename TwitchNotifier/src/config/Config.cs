@@ -132,6 +132,7 @@ namespace TwitchNotifier.src.config {
     /// Contains events from Twitch
     /// </summary>
     public class EventObject {
+        public string Condition { get; set; } = "";
         public TwitchListenerSettings Twitch { get; set; } = new TwitchListenerSettings();
         public DiscordEmbed Discord { get; set; } = new DiscordEmbed();
         public string WebHookUrl { get; set; } = "The Discord Webhook URL";
@@ -206,6 +207,7 @@ namespace TwitchNotifier.src.config {
     public class DiscordEmbed {
         public string Username { get; set; } = "%Channel.Name%";
         public string AvatarUrl { get; set; } = "%Channel.User.Url%";
+        public string Content { get; set; } = "Content above the embed (max 2048 characters)";
         public Embed Embed { get; set; } = new Embed();
     }
 

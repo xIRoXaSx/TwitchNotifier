@@ -45,19 +45,20 @@ namespace TwitchNotifier.src.Placeholders {
                 var selectedToken = replacement.SelectToken(match.Groups[1].Value.ToLower(), false) ?? replacement.SelectToken(match.Groups[1].Value.ToSnakeCase(), false);
                 if (selectedToken != null) {
                     // Add more options to Stream.ThumbnailUrl in the future (eg.: change size)
-                    selectedToken = match.Groups[1].Value.ToLower() == "stream.thumbnailurl" ? selectedToken.ToString().Replace("{width}", "1920").Replace("{height}", "1080") : selectedToken;
+                    selectedToken = match.Groups[1].Value.ToLower() == "stream.thumbnailurl" ? selectedToken.ToString().Replace("{width}", "1280").Replace("{height}", "720") : selectedToken;
 
                     // Check for matched placeholders which are empty / null (eg. unset game names)
                     if (string.IsNullOrEmpty(selectedToken.ToString())) {
                         returnValue = returnValue.Replace(match.Groups[0].Value, "-");
                     } else {
-                        returnValue = returnValue.Replace(match.Groups[0].Value, selectedToken.ToString().Replace("\'", "\'\'")).Replace(@"\n", "\u200B");
+                        returnValue = returnValue.Replace(match.Groups[0].Value, selectedToken.ToString().Replace("\'", "\'\'"));
                     }
                 } else {
                     returnValue = returnValue.Replace(match.Groups[0].Value, "-");
                 }
             }
 
+            returnValue = returnValue.Replace(@"\n", "\u200B");
             return returnValue;
         }
     }
