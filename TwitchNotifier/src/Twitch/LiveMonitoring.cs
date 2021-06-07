@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -132,8 +133,7 @@ namespace TwitchNotifier.src.Twitch {
         /// <param name="e">The event args</param>
         private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
             var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-            Log.Info("Online: " + e.Channel);
-            Log.Debug(e.Channel + " went online!");
+            Log.Info(e.Channel + " went online!");
 
             var cacheEntry = new CacheEntry() {
                 Key = e.Stream.UserId,
@@ -166,11 +166,15 @@ namespace TwitchNotifier.src.Twitch {
         private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
             if (channels.Count > 0) {
                 foreach (var eventObject in channels) {
-                    var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
-                    new WebRequest() {
-                        webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
-                        discordEmbed = embed
-                    }.SendRequest();
+                    var condition = new Placeholders.Placeholder().ReplacePlaceholders((string)((dynamic)eventObject.Value)["Condition"], placeholderHelper);
+                    
+                    if (Parser.CheckEventCondition(condition)) {
+                        var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
+                        new WebRequest() {
+                            webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
+                            discordEmbed = embed
+                        }.SendRequest();
+                    }
                 }
             }
         }
