@@ -4,19 +4,20 @@ Ever wanted to receive **customized** Discord messages when you or your favorite
 You came to the right place if this describes your problem!  
 With TwitchNotifier you can customize which **events** should trigger messages for your Discord server and how they should look like!  
 The setup is quickly done in a few minutes and the integrated **placeholders** will make your life even easier!  
-Sounds too good to be true? Try it out and see! 😊
+Sounds too good to be true? Try it out and see! 😊  
+<br/>
+[![Cross-Platform .NET Core](https://github.com/xIRoXaSx/TwitchNotifier/actions/workflows/cross-platform.yml/badge.svg)](https://github.com/xIRoXaSx/TwitchNotifier/actions/workflows/cross-platform.yml)
 ***
 <br/>
 
-
 ### 📃 Configuration
-For a detailed configuration please check out [Configuration](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration)
+For a detailed configuration please check out [<ARTIKLE>](<WIKI>)
 
 ***
 <br/>
 
 ### 🔗 Placeholders
-To view all available placeholders please check out [Placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Placeholders)
+To view all available placeholders please check out [<ARTIKLE>](<WIKI>)
 ***
 <br/>
 
@@ -24,7 +25,7 @@ To view all available placeholders please check out [Placeholders](https://githu
 
 | Feature            | Description | Status |
 |--------------------|-------------|--------|
-|Customizable message  | Lets you fully controll Discord embeds |✅|
+|Customizable message | Lets you fully controll Discord embeds |✅|
 |Customizable Webhook user | Lets you overwrite the preset Discord Webhook names and images |✅|
 |Multiple channel listener | Lets you select more than one Twitch channel which will raise events |✅|
 |Multiple event nodes | Lets you create different messages for the same event listener |✅|
