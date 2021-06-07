@@ -12,13 +12,13 @@ Sounds too good to be true? Try it out and see! 😊
 <br/>
 
 ### 📃 Configuration
-For a detailed configuration please check out [<ARTIKLE>](<WIKI>)
+For a detailed configuration please check out the [configuration](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration) section
 
 ***
 <br/>
 
 ### 🔗 Placeholders
-To view all available placeholders please check out [<ARTIKLE>](<WIKI>)
+To view all available placeholders please check out the [placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Placeholders) section
 ***
 <br/>
 
