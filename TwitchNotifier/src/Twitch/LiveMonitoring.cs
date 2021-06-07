@@ -166,7 +166,14 @@ namespace TwitchNotifier.src.Twitch {
         private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
             if (channels.Count > 0) {
                 foreach (var eventObject in channels) {
-                    var condition = new Placeholders.Placeholder().ReplacePlaceholders((string)((dynamic)eventObject.Value)["Condition"], placeholderHelper);
+                    var condition = string.Empty;
+                    
+                    try {
+                        condition = new Placeholders.Placeholder().ReplacePlaceholders((string)((dynamic)eventObject.Value)["Condition"], placeholderHelper);
+                    } catch {
+                        Log.Warn("Node \"Condition\" could not be found on eventnode \"" + eventObject.Key + "\"... Defaulted to empty condition!");
+                    }
+                    
                     
                     if (Parser.CheckEventCondition(condition)) {
                         var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
