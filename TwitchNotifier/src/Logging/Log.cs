@@ -7,7 +7,13 @@ namespace TwitchNotifier.src.Logging {
 
         private static void LogToFile(string text) {
             try {
-                File.AppendAllText(Config.configLocation + Path.DirectorySeparatorChar + GetLogFileDateString() + ".log", text + Environment.NewLine);
+                var logPath = Config.configLocation + Path.DirectorySeparatorChar + "logs" + Path.DirectorySeparatorChar;
+                
+                if (!Directory.Exists(logPath)) {
+                    Directory.CreateDirectory(logPath);
+                }
+
+                File.AppendAllText(logPath + GetLogFileDateString() + ".log", text + Environment.NewLine);
             } catch (Exception e) {
                 Error(e.ToString());
             }

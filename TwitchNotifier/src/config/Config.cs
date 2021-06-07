@@ -87,7 +87,7 @@ namespace TwitchNotifier.src.config {
         /// <returns>A Dictionary of EventObjects in form of <b>Dictionary&lt;string, object&gt;</b></returns>
         public static Dictionary<string, object> GetEventObjectsByTwitchChannelName(string eventName, string username) {
             Dictionary<string, object> returnValue = new Dictionary<string, object>();
-            var deserializer = new DeserializerBuilder().Build();
+            var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
             var config = deserializer.Deserialize<dynamic>(File.ReadAllText(configFileLocation, Encoding.UTF8));
             var eventNodes = config["TwitchNotifier"][eventName];
 

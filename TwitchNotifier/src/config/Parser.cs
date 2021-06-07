@@ -17,6 +17,8 @@ namespace TwitchNotifier.src.config {
         public const string GreaterThan = ">";
         public const string LessThan = "<";
         public const string Contains = ".Contains";
+        public const string True = "true";
+        public const string False = "false";
 
 
         /// <summary>
@@ -110,63 +112,81 @@ namespace TwitchNotifier.src.config {
                 LessEquals,
                 GreaterThan,
                 LessThan,
-                Contains
+                Contains,
+                True,
+                False
             };
 
-            // Check if condition contains one of the strings before trying to split it
-            if (listOfSeperators.Any(x => condition.Contains(x))) {
-                foreach (var logicalCondition in listOfSeperators) {
-                    seperatedCondition = condition.Split(logicalCondition, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
+            if (!string.IsNullOrEmpty(condition)) {
+                // Check if condition contains one of the strings before trying to split it
+                if (listOfSeperators.Any(x => condition.ToLower().Contains(x.ToLower()))) {
+                    foreach (var logicalCondition in listOfSeperators) {
+                        seperatedCondition = condition.Split(logicalCondition, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
 
-                    if (seperatedCondition.Length == 2) {
-                        matchedLogicalCondition = logicalCondition;
-                        break;
+                        if (seperatedCondition.Length == 2) {
+                            matchedLogicalCondition = logicalCondition;
+                            break;
+                        } else {
+                            if (condition.ToLower() == logicalCondition) {
+                                matchedLogicalCondition = logicalCondition;
+                            }
+                        }
                     }
                 }
-            }
 
 
-            if (!string.IsNullOrEmpty(matchedLogicalCondition)) {
-                int int1, int2;
-                switch (matchedLogicalCondition) {
-                    case Equals:
-                        returnValue = seperatedCondition[0] == seperatedCondition[1];
-                        break;
-                    case NotEquals:
-                        returnValue = seperatedCondition[0] != seperatedCondition[1];
-                        break;
-                    case GreaterEquals:
-                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
-                            returnValue = int1 >= int2;
-                        }
+                if (!string.IsNullOrEmpty(matchedLogicalCondition)) {
+                    int int1, int2;
+                    switch (matchedLogicalCondition) {
+                        case Equals:
+                            returnValue = seperatedCondition[0] == seperatedCondition[1];
+                            break;
+                        case NotEquals:
+                            returnValue = seperatedCondition[0] != seperatedCondition[1];
+                            break;
+                        case GreaterEquals:
+                            if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                                returnValue = int1 >= int2;
+                            }
 
-                        break;
-                    case LessEquals:
-                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
-                            returnValue = int1 <= int2;
-                        }
+                            break;
+                        case LessEquals:
+                            if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                                returnValue = int1 <= int2;
+                            }
 
-                        break;
-                    case GreaterThan:
-                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
-                            returnValue = int1 > int2;
-                        }
+                            break;
+                        case GreaterThan:
+                            if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                                returnValue = int1 > int2;
+                            }
 
-                        break;
-                    case LessThan:
-                        if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
-                            returnValue = int1 < int2;
-                        }
+                            break;
+                        case LessThan:
+                            if (int.TryParse(seperatedCondition[0], out int1) && int.TryParse(seperatedCondition[0], out int2)) {
+                                returnValue = int1 < int2;
+                            }
 
-                        break;
+                            break;
 
-                    case Contains:
-                        var match = System.Text.RegularExpressions.Regex.Match(seperatedCondition[1], @"\((.*)\)");
-                        if (match.Success) {
-                            returnValue = seperatedCondition[0].Contains(match.Groups[1].Value);
-                        }
-                        break;
+                        case Contains:
+                            var match = System.Text.RegularExpressions.Regex.Match(seperatedCondition[1], @"\((.*)\)");
+                            if (match.Success) {
+                                returnValue = seperatedCondition[0].Contains(match.Groups[1].Value);
+                            }
+                            break;
+
+                        case True:
+                            returnValue = true;
+                            break;
+
+                        case False:
+                            returnValue = false;
+                            break;
+                    }
                 }
+            } else {
+                returnValue = true;
             }
 
             return returnValue;
