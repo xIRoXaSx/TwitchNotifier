@@ -26,7 +26,7 @@
           AvatarUrl: '%Channel.User.Url%'
           Embed:
             Title: '%Channel.Name% went online!'
-            [...] Trimmed for readability
+            # [...] Trimmed for readability
         WebHookUrl: <Place The Discord Webhook URL Here>
         ```
     6. (Re-)Start the program and get notified! ☕
@@ -34,7 +34,7 @@
 ***
 <br/>
 
-## Multiple Channel Setup
+## 📝 Multiple Channel Setup
 You can set up multiple channels in different ways.  
 If you'd like to use seperate embed formats, channels / Webhooks add multiple yml nodes underneath each event node like shown here:
 ```yaml
@@ -50,7 +50,7 @@ TwitchNotifier:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
         Embed:
-        [...] Trimmed for readability
+        # [...] Trimmed for readability
       WebHookUrl: The Discord Webhook URL
     AnotherOption:
       Twitch:
@@ -62,7 +62,7 @@ TwitchNotifier:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
         Embed:
-        [...] Trimmed for readability
+        # [...] Trimmed for readability
       WebHookUrl: The Discord Webhook URL
 ```
 
@@ -72,6 +72,7 @@ If you like to use the same embed format, channel / Webhook just add the usernam
 TwitchNotifier:
   OnStreamOnline:
     StreamerOption1:
+      Condition: ""
       Twitch:
         Usernames:
         - Channel1
@@ -81,8 +82,100 @@ TwitchNotifier:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
         Embed:
-        [...] Trimmed for readability
+        # [...] Trimmed for readability
       WebHookUrl: The Discord Webhook URL
+```
+
+***
+<br/>
+
+## 📝 Conditions
+In each eventnode you can define a condition (**case sensitive**) which must be met before the web request will be sent.  
+The syntax of those conditions are inspired by common comparison operators.  
+It can be as easy as `true` and `false` but can also be more specific.  
+If a condition is not set (empty / null) the statement check will be skipped => embed will be sent.  
+In the condition statements [placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Placeholders) can be used as well!  
+Conditions can help you to **customize** your embeds even more!  
+Example of such a custmization is shown below.  
+
+### 📃 List of comparison operators
+
+Operator | Description | Example
+---------|-------------|--------
+`==`|Case sensitive - Equal to|`%Stream.GameName% == Just Chatting`
+`!=`|Case sensitive - Not equal to|`%Stream.GameName% != Just Chatting`
+`>=`|Greater than or equal to|`%Stream.ViewerCount% >= 999`
+`<=`|Greater than or equal to|`%Stream.ViewerCount% <= 999`
+`>`|Greater than|`%Stream.ViewerCount% > 999`
+`<`|Less than|`%Stream.ViewerCount% < 999`
+`.Contains()`|Less than|`%Stream.Title%.Contains(Educational)`
+
+<br/>
+
+### ❓ Comparison with `==`
+In that specific example the **game** which is being played by the streamer will be checked. If it is **equal** to `Just Chatting` it returns `true` and the embed will be sent!
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.GameName% == Just Chatting"
+```
+
+### ❓ Comparison with `!=`
+In that specific example the **game** which is being played by the streamer will be checked. If it is **not equal** to `Just Chatting` it returns `true` and the embed will be sent!
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.GameName% != Just Chatting"
+```
+
+### ❓ Comparison with `>=`
+In that specific example the **viewer count** of the stream will be checked. If it is **greater than** or **equal** to `999` (999+) it returns `true` and the embed will be sent!
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.ViewerCount% >= 999"
+```
+
+### ❓ Comparison with `<=`
+In that specific example the **viewer count** of the stream will be checked. If it is **less than** or **equal** to `999` (0 - 999) it returns `true` and the embed will be sent!
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.ViewerCount% <= 999"
+```
+
+### ❓ Comparison with `>`
+In that specific example the **viewer count** of the stream will be checked. If it is **greater than** to `999` (1000+) it returns `true` and the embed will be sent!
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.ViewerCount% > 999"
+```
+
+### ❓ Comparison with `<`
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.ViewerCount% < 999"
+```
+
+### ❓ Comparison with `Contains`
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.Title%.Contains(Educational)"
 ```
 
 ***
@@ -93,12 +186,14 @@ TwitchNotifier:
 TwitchNotifier:
   OnStreamOnline:
     StreamerOption1:
+      Condition: ''
       Twitch:
         Usernames:
         - Channelnames
       Discord:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
+        Content: Content above the embed (max 2048 characters)
         Embed:
           Title: '%Channel.Name% went online!'
           Url: '%Channel.User.Url%'
@@ -126,12 +221,14 @@ TwitchNotifier:
       WebHookUrl: The Discord Webhook URL
   OnStreamOffline:
     StreamerOption1:
+      Condition: ''
       Twitch:
         Usernames:
         - Channelnames
       Discord:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
+        Content: Content above the embed (max 2048 characters)
         Embed:
           Title: '%Channel.Name% went online!'
           Url: '%Channel.User.Url%'
@@ -159,12 +256,14 @@ TwitchNotifier:
       WebHookUrl: The Discord Webhook URL
   OnFollow:
     StreamerOption1:
+      Condition: ''
       Twitch:
         Usernames:
         - Channelnames
       Discord:
         Username: '%Channel.Name%'
         AvatarUrl: '%Channel.User.Url%'
+        Content: Content above the embed (max 2048 characters)
         Embed:
           Title: '%Channel.Name% went online!'
           Url: '%Channel.User.Url%'
