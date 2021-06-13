@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Caching;
 
 namespace TwitchNotifier.src.Helper {
     /// <summary>
@@ -32,5 +33,11 @@ namespace TwitchNotifier.src.Helper {
         /// <para>Default: <c>Now + 30 seconds</c></para>
         /// </summary>
         public DateTime ExpirationTime { get; set; } = DateTime.Now.AddSeconds(30);
+
+        /// <summary>
+        /// The CacheItemPriority which indicates if an item should be removed or not
+        /// <para>Default: <c>Default</c> (removable)</para>
+        /// </summary>
+        public CacheItemPriority Priority { get; set; } = CacheItemPriority.Default;
     }
 }

@@ -181,6 +181,23 @@ OnStreamOnline:
 ***
 <br/>
 
+## Mentions and Emojis
+If you want to mention users, channels, roles or if you want to use custom emojis, please use the following syntax in your embeds 
+
+<br/>
+
+Type | Format | Example
+-----|--------|--------
+User|<@UserID>|<@121212121212121212>
+User Nickname|<@!UserID>|<@!121212121212121212>
+Channel|<#ChannelID>|<#121212121212121212>
+Role|<@&RoleID>|<@&121212121212121212>
+Custom Emoji|<:NAME:ID>|<:lul:121212121212121212>
+Custom Emoji (Animated)|<a:NAME:ID>|<a:lul:121212121212121212>
+
+***
+<br/>
+
 ## 📝 Default Configuration
 ```yaml
 TwitchNotifier:
