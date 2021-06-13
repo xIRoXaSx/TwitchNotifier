@@ -44,7 +44,6 @@ namespace TwitchNotifier.src.WebRequests {
                 if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.TooManyRequests) {
                     // Cache object and get timeout and calc queue time to resend
                     var cacheEntry = new CacheEntry() {
-                        AddIfNotCached = true,
                         CreateSha256Sum = false,
                         ExpirationTime = DateTime.Now.AddHours(1),
                         Key = DateTime.Now.ToString(),

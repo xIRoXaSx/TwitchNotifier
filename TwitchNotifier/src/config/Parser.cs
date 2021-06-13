@@ -39,8 +39,8 @@ namespace TwitchNotifier.src.config {
         /// <param name="objectToDeserialize">The object which should be deserialized</param>
         /// <returns>An object that can be easily casted to the desired type</returns>
         public static object Deserialize(Type type, object objectToDeserialize) {
-            var serializer = new SerializerBuilder().Build();
-            var deserializer = new DeserializerBuilder().Build();
+            var serializer = new SerializerBuilder().ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults & DefaultValuesHandling.OmitNull).Build();
+            var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
 
             var yml = serializer.Serialize((dynamic)objectToDeserialize);
             return deserializer.Deserialize(yml, type);
