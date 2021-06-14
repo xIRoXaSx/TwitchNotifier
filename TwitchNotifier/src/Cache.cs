@@ -28,14 +28,13 @@ namespace TwitchNotifier.src {
         /// </summary>
         /// <param name="cacheEntry">The CacheEntry to check</param>
         /// <returns>
-        /// <c>true</c> if cache contains entry (expired)<br/>
-        /// <c>false</c> if cache does not contain entry (not expired)
+        /// <c>true</c> if cache contains entry (not expired)<br/>
+        /// <c>false</c> if cache does not contain entry (expired or not added)
         /// </returns>
         public static bool CheckCacheEntryExpiration(CacheEntry cacheEntry) {
             var returnValue = false;
             cacheEntry = HashCacheEntryKey(cacheEntry);
-            
-            CacheEntry cacheValue = (CacheEntry)MemoryCache.Default[cacheEntry.Key];
+            var cacheValue = (CacheEntry)MemoryCache.Default[cacheEntry.Key];
 
             if (cacheValue != null) {
                 returnValue = true;
