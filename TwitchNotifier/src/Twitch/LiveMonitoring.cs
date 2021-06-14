@@ -12,6 +12,7 @@ using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchNotifier.src.config;
 using TwitchNotifier.src.Helper;
 using TwitchNotifier.src.Logging;
+using TwitchNotifier.src.Validation;
 using TwitchNotifier.src.WebRequests;
 using YamlDotNet.Serialization;
 
@@ -33,7 +34,10 @@ namespace TwitchNotifier.src.Twitch {
         private LiveStreamMonitorService Monitor;
         private TwitchAPI API;
         private bool disposed = false;
-        public static string defaultConfigCacheKey  = "DefaultConfig";
+        public bool sendNotifications = true;
+        public static string defaultNotificationThresholdInSeconds = "NotificationThresholdInSeconds";
+        public static string defaultSkipStartupNotifications = "SkipStartupNotifications";
+        public static string defaultConfigCacheKey = "DefaultConfig";
 
         public LiveMonitoring() {
             Task.Run(() => ConfigureLiveMonitorAsync()).GetAwaiter().GetResult();
@@ -77,11 +81,33 @@ namespace TwitchNotifier.src.Twitch {
                 Monitor.Start();
                 await API.Helix.Channels.CheckCredentialsAsync();
 
+                //Console.WriteLine(string.Join(",", Monitor.ChannelsToMonitor));
+                //var usersFromMonitor = await API.Helix.Users.GetUsersAsync(logins: Monitor.ChannelsToMonitor);
+
+                //foreach (var channel in usersFromMonitor.Users) {
+                //    var a = await API.Helix.Clips.GetClipsAsync(broadcasterId: channel.Id);
+                //    foreach (var clip in a.Clips) {
+                //        Console.WriteLine(channel.DisplayName + ": " + clip.Title);
+                //        Console.WriteLine("   > GameId: " + clip.GameId);
+                //        Console.WriteLine("   > Duration: " + clip.Duration);
+                //        Console.WriteLine("   > BroadcasterId: " + clip.BroadcasterId);
+                //        Console.WriteLine("   > ViewCount: " + clip.ViewCount);
+                //    }
+                //}
+
+                var enableHotload = true;
+
+                if (config["Settings"].ContainsKey("EnableHotload")) {
+                    bool.TryParse(config["Settings"]["EnableHotload"], out enableHotload);
+                }
+
+                if (enableHotload) {
+                    SetFileWatchers();
+                }
+
             } catch (Exception e) {
                 Console.WriteLine(e);
             }
-
-            SetFileWatchers();
 
             await Task.Delay(-1);
         }
@@ -120,6 +146,7 @@ namespace TwitchNotifier.src.Twitch {
             };
 
             fileSystemWatcher.Changed += HotloadConfig;
+            Log.Debug("FileSystemWatcher for the config file has been enabled");
         }
 
         /// <summary>
@@ -186,6 +213,7 @@ namespace TwitchNotifier.src.Twitch {
                     Log.Debug("Disposing Monitor!");
                     DisposeInstance(DisposableInstance.Monitor);
                     new LiveMonitoring();
+                    disposed = false;
                 }
             } else {
                 var cachedEntry = MemoryCache.Default.Get(cacheEntry.Key);
@@ -201,7 +229,7 @@ namespace TwitchNotifier.src.Twitch {
         private List<string> GetAllTwitchUsernamesFromConfig(dynamic config) {
             var usernames = new List<string>();
             foreach (var property in typeof(TwitchNotifierSettings).GetProperties()) {
-                // Events like "OnStreamStart", "OnStreamEnd", "OnFollow", ...
+                // Events like "OnStreamStart", "OnStreamEnd", ...
                 var twitchEvent = config["TwitchNotifier"][property.Name];
 
                 // eventNode is the node for all settings below each event
@@ -222,7 +250,7 @@ namespace TwitchNotifier.src.Twitch {
             var returnValue = new List<string>();
             
             foreach (var property in typeof(TwitchNotifierSettings).GetProperties()) {
-                // Events like "OnStreamStart", "OnStreamEnd", "OnFollow", ...
+                // Events like "OnStreamStart", "OnStreamEnd", ...
                 var twitchEvent = config["TwitchNotifier"][property.Name];
 
                 // eventNode is the node for all settings below each event
@@ -235,34 +263,54 @@ namespace TwitchNotifier.src.Twitch {
         }
 
         /// <summary>
-        /// Read the config files TwitchNotifier settings
+        /// Send the embed over the specified URL
         /// </summary>
-        /// <param name="fileFullPath">The full path of the file which should be read</param>
-        /// <returns></returns>
-        private string ReadConfigNotifierSettings(string fileFullPath) {
-            using (var fileStream = new FileStream(fileFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                using (var streamReader = new StreamReader(fileStream, Encoding.UTF8)) {
-                    var yml = string.Empty;
-                    var deserializer = new DeserializerBuilder().Build();
-                    var serializer = new SerializerBuilder().ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults & DefaultValuesHandling.OmitNull).Build();
-                    var changedConfig = streamReader.ReadToEnd();
-                    
-                    if (!string.IsNullOrEmpty(changedConfig)) {
-                        var dynamicConfig = deserializer.Deserialize<dynamic>(changedConfig);
-                        yml = serializer.Serialize(dynamicConfig["TwitchNotifier"]);
+        /// <param name="placeholderHelper">The PlaceholderHelper to replace placeholders for the embed</param>
+        /// <param name="channels">The Dictionary to loop through all Twitch channels</param>
+        private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
+            if (channels.Count > 0) {
+                foreach (var eventObject in channels) {
+                    var condition = string.Empty;
+
+                    try {
+                        condition = new Placeholders.Placeholder().ReplacePlaceholders((string)((dynamic)eventObject.Value)["Condition"], placeholderHelper);
+                    } catch {
+                        Log.Warn("Node \"Condition\" could not be found on eventnode \"" + eventObject.Key + "\"... Defaulted to empty condition!");
                     }
 
-                    return yml;
+                    if (Parser.CheckEventCondition(condition)) {
+                        var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
+                        var embedValidation = new EmbedValidation();
+                        var result = embedValidation.ValidateEmbed((DiscordEmbed)embed);
+
+                        if (result.Success) {
+                            Log.Debug("+ Embed validation succeeded!");
+                        } else {
+                            Log.Warn("x Embed validation failed!");
+                            Log.Warn(result.ErrorMessage);
+                        }
+
+                        new WebRequest() {
+                            webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
+                            discordEmbed = result.Embed
+                        }.SendRequest();
+                    }
                 }
             }
         }
 
+        #region Events
         /// <summary>
         /// Called when SetChannels() is being called
         /// </summary>
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
         private void Monitor_OnChannelsSet(object sender, OnChannelsSetArgs e) {
+            var cachedSkipStartupNotifications = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultSkipStartupNotifications));
+            var skipInitialNotifications = true;
+            bool.TryParse(cachedSkipStartupNotifications.Value.ToString(), out skipInitialNotifications);
+            sendNotifications = !skipInitialNotifications;
+
             Log.Info("Channel list has been set!");
             Log.Debug("  > Channles: ");
             e.Channels.ForEach(x => Log.Debug("    - " + x));
@@ -274,6 +322,7 @@ namespace TwitchNotifier.src.Twitch {
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
         private void Monitor_OnServiceStarted(object sender, OnServiceStartedArgs e) {
+            sendNotifications = true;
             Log.Info("Service has started!");
         }
 
@@ -283,18 +332,63 @@ namespace TwitchNotifier.src.Twitch {
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
         private void Monitor_OnServiceStopped(object sender, OnServiceStoppedArgs e) {
+            sendNotifications = false;
             Log.Debug("Service has stopped!");
         }
 
         /// <summary>
+        /// Called when stream went live
+        /// </summary>
+        /// <param name="sender">The sender object</param>
+        /// <param name="e">The event args</param>
+        private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
+            if (sendNotifications) {
+                var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
+                Log.Info(e.Channel + " is live right now!");
+
+                var cacheEntry = new CacheEntry() {
+                    Key = e.Stream.UserId,
+                    Value = e.Stream.UserId
+                };
+
+                var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
+                if (notificationThresholdInSeconds != null && ((int)notificationThresholdInSeconds.Value) > -1) {
+                    cacheEntry.ExpirationTime = DateTime.Now.AddSeconds((int)notificationThresholdInSeconds.Value);
+                } else {
+                    cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(30);
+                }
+
+                if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                    var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                    var placeholderHelper = new PlaceholderHelper() {
+                        Stream = e.Stream,
+                        Channel = new PlaceHolderChannelHelper() {
+                            Name = e.Channel,
+                            User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
+                        }
+                    };
+
+                    SendEmbed(placeholderHelper, channels);
+                } else {
+                    var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(e.Stream.UserId));
+                    Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
+
+                    if (cachedChannelEntry != null) {
+                        Log.Debug("Cooldown: " + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                    }
+                }
+            } else {
+                Log.Debug(e.Channel + " is live right now but startup has not finished yet! " + "(\"" + defaultSkipStartupNotifications + "\" = " + !sendNotifications + ")");
+            }
+        }
+
+        /// <summary>
         /// Called when stream went offlne<br/>
-        /// <c>Todo</c>: Usful Try {} catch {}
         /// </summary>
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
         private async void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
             var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-            Log.Info("Offline: " + e.Channel);
             Log.Debug(e.Channel + " went offline!");
 
             var cacheEntry = new CacheEntry() {
@@ -318,64 +412,6 @@ namespace TwitchNotifier.src.Twitch {
                 Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
             }
         }
-
-        /// <summary>
-        /// Called when stream went live<br/>
-        /// <c>Todo</c>: Usful Try {} catch {}
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">The event args</param>
-        private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
-            var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-            Log.Info(e.Channel + " went online!");
-
-            var cacheEntry = new CacheEntry() {
-                Key = e.Stream.UserId,
-                Value = e.Stream.UserId
-            };
-
-            if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
-                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
-                var placeholderHelper = new PlaceholderHelper() {
-                    Stream = e.Stream,
-                    Channel = new PlaceHolderChannelHelper() {
-                        Name = e.Channel,
-                        User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
-                    }
-                };
-
-                SendEmbed(placeholderHelper, channels);
-            } else {
-                Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
-                Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
-            }
-        }
-
-        /// <summary>
-        /// Send the embed over the specified URL
-        /// </summary>
-        /// <param name="placeholderHelper">The PlaceholderHelper to replace placeholders for the embed</param>
-        /// <param name="channels">The Dictionary to loop through all Twitch channels</param>
-        private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
-            if (channels.Count > 0) {
-                foreach (var eventObject in channels) {
-                    var condition = string.Empty;
-                    
-                    try {
-                        condition = new Placeholders.Placeholder().ReplacePlaceholders((string)((dynamic)eventObject.Value)["Condition"], placeholderHelper);
-                    } catch {
-                        Log.Warn("Node \"Condition\" could not be found on eventnode \"" + eventObject.Key + "\"... Defaulted to empty condition!");
-                    }
-                    
-                    if (Parser.CheckEventCondition(condition)) {
-                        var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
-                        new WebRequest() {
-                            webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
-                            discordEmbed = embed
-                        }.SendRequest();
-                    }
-                }
-            }
-        }
+        #endregion
     }
 }

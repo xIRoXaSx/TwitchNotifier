@@ -85,7 +85,7 @@ namespace TwitchNotifier.src.config {
             if (parsedJson["timestamp"].ToString().ToLower() == "true") {
                 parsedJson["timestamp"] = DateTime.Now;
             } else {
-                parsedJson["timestamp"].Remove();
+                parsedJson.Remove("timestamp");
             }
 
             return parsedJson.ToString();
