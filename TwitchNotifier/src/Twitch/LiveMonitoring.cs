@@ -75,35 +75,39 @@ namespace TwitchNotifier.src.Twitch {
                 Monitor.OnServiceStopped += Monitor_OnServiceStopped;
 
                 Monitor.SetChannelsByName(usernames.Distinct().ToList());
-
                 await Monitor.UpdateLiveStreamersAsync();
 
-                Monitor.Start();
-                await API.Helix.Channels.CheckCredentialsAsync();
+                // As in TwitchLibs dev branch ExpiresIn is always set to 0.
+                // When dev gets merged into main check if ExpiresIn passed threshold and refresh token
+                var validAccessTokenResponse = await API.Auth.ValidateAccessTokenAsync();
+                
+                if (validAccessTokenResponse != null) {
+                    // Start the Monitor service
+                    Monitor.Start();
 
-                //Console.WriteLine(string.Join(",", Monitor.ChannelsToMonitor));
-                //var usersFromMonitor = await API.Helix.Users.GetUsersAsync(logins: Monitor.ChannelsToMonitor);
+                    var usersFromMonitor = await API.Helix.Users.GetUsersAsync(logins: Monitor.ChannelsToMonitor);
 
-                //foreach (var channel in usersFromMonitor.Users) {
-                //    var a = await API.Helix.Clips.GetClipsAsync(broadcasterId: channel.Id);
-                //    foreach (var clip in a.Clips) {
-                //        Console.WriteLine(channel.DisplayName + ": " + clip.Title);
-                //        Console.WriteLine("   > GameId: " + clip.GameId);
-                //        Console.WriteLine("   > Duration: " + clip.Duration);
-                //        Console.WriteLine("   > BroadcasterId: " + clip.BroadcasterId);
-                //        Console.WriteLine("   > ViewCount: " + clip.ViewCount);
-                //    }
-                //}
+                    Log.Info("Starting clip listener(s)");
+                    
+                    foreach (var user in usersFromMonitor.Users) {
+                        var clipsResponse = await API.Helix.Clips.GetClipsAsync(broadcasterId: user.Id, startedAt: DateTime.Now.AddDays(-1), endedAt: DateTime.Now);
+                        var clip = new Clip();
+                        Log.Debug("  > Channles: ");
+                        Log.Debug("    - " + user.DisplayName);
+                        clip.StartPollingForClips(user.Id);
+                    }
 
-                var enableHotload = true;
+                    var enableHotload = true;
 
-                if (config["Settings"].ContainsKey("EnableHotload")) {
-                    bool.TryParse(config["Settings"]["EnableHotload"], out enableHotload);
+                    if (config["Settings"].ContainsKey("EnableHotload")) {
+                        bool.TryParse(config["Settings"]["EnableHotload"], out enableHotload);
+                    }
+
+                    if (enableHotload) {
+                        SetFileWatchers();
+                    }
                 }
 
-                if (enableHotload) {
-                    SetFileWatchers();
-                }
 
             } catch (Exception e) {
                 Console.WriteLine(e);

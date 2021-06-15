@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
-    <PackageReference Include="TwitchLib.Api" Version="3.2.3" />
+    <PackageReference Include="TwitchLib.Api" Version="3.2.4-preview-257a4a2e6fc7ff39be6a4c6524e0f1778df36edc" />
     <PackageReference Include="YamlDotNet" Version="11.1.1" />
   </ItemGroup>
 
