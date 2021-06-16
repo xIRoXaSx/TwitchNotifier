@@ -5,6 +5,7 @@
     public class TwitchNotifierSettings {
         public Event OnStreamOnline { get; set; } = new Event();
         public Event OnStreamOffline { get; set; } = new Event();
+        public Event OnClipCreated { get; set; } = new Event();
         public Event OnFollow { get; set; } = new Event();
     }
 }

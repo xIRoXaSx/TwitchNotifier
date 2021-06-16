@@ -94,7 +94,7 @@ namespace TwitchNotifier.src.Twitch {
                         var clip = new Clip();
                         Log.Debug("  > Channles: ");
                         Log.Debug("    - " + user.DisplayName);
-                        clip.StartPollingForClips(user.Id);
+                        clip.StartListeneingForClips(user.Id);
                     }
 
                     var enableHotload = true;
@@ -271,7 +271,7 @@ namespace TwitchNotifier.src.Twitch {
         /// </summary>
         /// <param name="placeholderHelper">The PlaceholderHelper to replace placeholders for the embed</param>
         /// <param name="channels">The Dictionary to loop through all Twitch channels</param>
-        private static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
+        internal static void SendEmbed(PlaceholderHelper placeholderHelper, Dictionary<string, object> channels) {
             if (channels.Count > 0) {
                 foreach (var eventObject in channels) {
                     var condition = string.Empty;

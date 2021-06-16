@@ -5,5 +5,6 @@
     public class PlaceholderHelper {
         public TwitchLib.Api.Helix.Models.Streams.GetStreams.Stream Stream { get; set; }
         public PlaceHolderChannelHelper Channel { get; set; }
+        public PlaceHolderClipHelper Clip { get; set; }
     }
 }

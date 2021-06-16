@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Clips.GetClips;
 using TwitchNotifier.src.config;
+using TwitchNotifier.src.Helper;
 using TwitchNotifier.src.Logging;
 using YamlDotNet.Serialization;
 
@@ -19,57 +21,94 @@ namespace TwitchNotifier.src.Twitch {
         /// It can take up to 10 minutes until the clip is available for the API!
         /// </summary>
         /// <param name="channelId">The channel ID to monitor clips for</param>
-        internal async void StartPollingForClips(string channelId) {
+        internal async void StartListeneingForClips(string channelId) {
             var cancelSource = new CancellationTokenSource();
             var cancelToken = cancelSource.Token;
+            var sendNotifications = false;
 
-            await new Task(async () => {
-                GetClipsResponse initialClips = null;
-                GetClipsResponse recentClips = null;
-                TwitchLib.Api.Helix.Models.Clips.GetClips.Clip latestClip = null;
+            await Task.Run(async () => {
+                try {
+                    GetClipsResponse initialClips = null;
+                    GetClipsResponse recentClips = null;
+                    TwitchLib.Api.Helix.Models.Clips.GetClips.Clip latestClip = null;
 
-                var deserializer = new DeserializerBuilder().Build();
-                var config = deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
-                var cancelTask = false;
-                var callIsInitial = true;
+                    var deserializer = new DeserializerBuilder().Build();
+                    var config = deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
 
-                API = new TwitchAPI();
-                API.Settings.ClientId = config["Settings"]["ClientID"];
-                API.Settings.AccessToken = config["Settings"]["AccessToken"];
+                    API = new TwitchAPI();
+                    API.Settings.ClientId = config["Settings"]["ClientID"];
+                    API.Settings.AccessToken = config["Settings"]["AccessToken"];
                 
-                if (await API.Auth.ValidateAccessTokenAsync() != null) {
-                    // Get initial clips (max 1 day back) to sort and use its CreatedAt property
-                    initialClips = await API.Helix.Clips.GetClipsAsync(broadcasterId: channelId, startedAt: DateTime.Now.AddDays(-1), endedAt: DateTime.Now);
-                    latestClip = initialClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
-                    
-                    GC.KeepAlive(latestClip);
+                    if (await API.Auth.ValidateAccessTokenAsync() != null) {
+                        // Get initial clips (max 1 day back) to sort and use its CreatedAt property
+                        initialClips = await API.Helix.Clips.GetClipsAsync(broadcasterId: channelId, startedAt: DateTime.Now.AddDays(-1), endedAt: DateTime.Now);
+                        latestClip = initialClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
 
-                    while (!cancelToken.IsCancellationRequested && !cancelTask) {
-                        recentClips = await API.Helix.Clips.GetClipsAsync(
-                            broadcasterId: channelId, 
-                            startedAt: Convert.ToDateTime(latestClip?.CreatedAt ?? DateTime.Now.AddDays(-1).ToString()), 
-                            endedAt: DateTime.Now
-                        );
+                        while (!cancelToken.IsCancellationRequested) {
+                            recentClips = await API.Helix.Clips.GetClipsAsync(
+                                broadcasterId: channelId, 
+                                startedAt: Convert.ToDateTime(latestClip?.CreatedAt ?? DateTime.Now.AddDays(-1).ToString()), 
+                                endedAt: DateTime.Now
+                            );
 
-                        if (recentClips.Clips.Length > 0) {
-                            // Check if the newest clip does not have the same URL as the last clip
-                            if ((recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault().Url != latestClip?.Url) || callIsInitial) {
-                                Log.Debug("Found new clip(s)!");
+                            if (recentClips.Clips.Length > 0 && sendNotifications) {
+                                // Check if the newest clip does not have the same URL as the last clip
+                                if ((recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault().Url != latestClip?.Url)) {
+                                    Log.Debug("Found new clip(s)!");
 
-                                foreach (var recentClip in recentClips.Clips) {
-                                    // Create and send embed
+                                    foreach (var recentClip in recentClips.Clips) {
+                                        // Create and send embed
+                                        SendEmbeddedClip(recentClip);
+                                    }
+
+                                    latestClip = recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
                                 }
-
-                                callIsInitial = false;
                             }
 
-                            latestClip = recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
+                            sendNotifications = true;
+                            await Task.Delay(10 * 1000);
                         }
-
-                        await Task.Delay(10 * 1000);
                     }
+                } catch (Exception ex) {
+                    Log.Error(ex.Message);
                 }
             });
+        }
+
+        /// <summary>
+        /// Send the embed to the desired Webhook on Discord
+        /// </summary>
+        /// <param name="clip"></param>
+        internal async void SendEmbeddedClip(TwitchLib.Api.Helix.Models.Clips.GetClips.Clip clip) {
+            var configEventName = "OnClipCreated";
+            var cacheEntry = new CacheEntry() {
+                Key = clip.Url,
+                Value = string.Empty,
+                ExpirationTime = DateTime.Now.AddSeconds(10)
+            };
+            
+            if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                var channel = await API.V5.Channels.GetChannelByIDAsync(clip.BroadcasterId);
+                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, channel.Name);
+                var placeholderHelper = new PlaceholderHelper() {
+                    Channel = new PlaceHolderChannelHelper() {
+                        Name = channel.Name,
+                        User = channel
+                    },
+                    Clip = new PlaceHolderClipHelper(clip, channel)
+                };
+
+
+
+                LiveMonitoring.SendEmbed(placeholderHelper, channels);
+            } else {
+                var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(clip.Url));
+                Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
+
+                if (cachedChannelEntry != null) {
+                    Log.Debug("Cooldown: " + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                }
+            }
         }
     }
 }
