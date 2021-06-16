@@ -51,6 +51,8 @@ namespace TwitchNotifier.src.WebRequests {
                     };
 
                     Cache.AddCacheEntry(cacheEntry);
+                } else if (((HttpWebResponse)ex.Response).StatusCode == HttpStatusCode.BadRequest) {
+                    Logging.Log.Warn("The embed is malformed! Check your settings!");
                 }
             }
 

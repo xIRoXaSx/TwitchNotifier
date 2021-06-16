@@ -44,6 +44,7 @@ namespace TwitchNotifier.src.Placeholders {
                 // Replace each match
                 foreach (Match match in matchesDistinct) {
                     var selectedToken = replacement.SelectToken(match.Groups[1].Value.ToLower(), false) ?? replacement.SelectToken(match.Groups[1].Value.ToSnakeCase(), false);
+
                     if (selectedToken != null) {
                         // Add more options to Stream.ThumbnailUrl in the future (eg.: change size)
                         // Add GUID to avoid Discords image cache (image won't change even after a few days)
@@ -57,7 +58,12 @@ namespace TwitchNotifier.src.Placeholders {
                             returnValue = returnValue.Replace(match.Groups[0].Value, selectedToken.ToString().Replace("\'", "\'\'"));
                         }
                     } else {
-                        returnValue = returnValue.Replace(match.Groups[0].Value, "-");
+                        var splittedPlaceholder = match.Groups[0].Value.Replace("%", "").ToLower().Split(".");
+                        if (match.Groups[0].Value.Contains(".") && (splittedPlaceholder.Any(x => x == "thumbnailurl" || x == "url" || x == "logo"))) {
+                            returnValue = returnValue.Replace(match.Groups[0].Value, "");
+                        } else {
+                            returnValue = returnValue.Replace(match.Groups[0].Value, "-");
+                        }
                     }
                 }
 
