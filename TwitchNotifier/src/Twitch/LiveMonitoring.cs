@@ -64,7 +64,7 @@ namespace TwitchNotifier.src.Twitch {
                     // eventNode is the node for all settings below each event
                     foreach (var eventNode in twitchEvent) {
                         List<string> usernameList = ((List<object>)eventNode.Value["Twitch"]["Usernames"]).Select(x => (string)x).ToList();
-                        usernames.AddRange(usernameList);
+                        usernames.AddRange(usernameList.Where(x => usernames.All(y => x.ToLower() != y.ToLower())));
                     }
                 }
 
@@ -85,16 +85,25 @@ namespace TwitchNotifier.src.Twitch {
                     // Start the Monitor service
                     Monitor.Start();
 
-                    var usersFromMonitor = await API.Helix.Users.GetUsersAsync(logins: Monitor.ChannelsToMonitor);
-
                     Log.Info("Starting clip listener(s)");
                     
-                    foreach (var user in usersFromMonitor.Users) {
-                        var clipsResponse = await API.Helix.Clips.GetClipsAsync(broadcasterId: user.Id, startedAt: DateTime.Now.AddDays(-1), endedAt: DateTime.Now);
-                        var clip = new Clip();
+                    var onClipCreatedEvent = config["TwitchNotifier"]["OnClipCreated"];
+                    var channelClipMonitorUsers = new List<string>();
+
+                    // eventNode is the node for all settings below each event
+                    foreach (var eventNode in onClipCreatedEvent) {
+                        List<string> clipEventUsernameList = ((List<object>)eventNode.Value["Twitch"]["Usernames"]).Select(x => (string)x).ToList();
+                        channelClipMonitorUsers.AddRange(clipEventUsernameList);
+                    }
+
+                    var channelsToMonitorClips = await API.Helix.Users.GetUsersAsync(logins: channelClipMonitorUsers);
+
+                    foreach (var channel in channelsToMonitorClips.Users) {
                         Log.Debug("  > Channles: ");
-                        Log.Debug("    - " + user.DisplayName);
-                        clip.StartListeneingForClips(user.Id);
+                        Log.Debug("    - " + channel.DisplayName);
+                        
+                        var clip = new Clip();
+                        clip.StartListeneingForClips(channel.Id);
                     }
 
                     var enableHotload = true;
@@ -352,14 +361,16 @@ namespace TwitchNotifier.src.Twitch {
 
                 var cacheEntry = new CacheEntry() {
                     Key = e.Stream.UserId,
-                    Value = e.Stream.UserId
+                    Value = configEventName
                 };
 
                 var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-                if (notificationThresholdInSeconds != null && ((int)notificationThresholdInSeconds.Value) > -1) {
-                    cacheEntry.ExpirationTime = DateTime.Now.AddSeconds((int)notificationThresholdInSeconds.Value);
+                int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
+                
+                if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
+                    cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
                 } else {
-                    cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(30);
+                    cacheEntry.ExpirationTime = DateTime.Now.AddMinutes(2);
                 }
 
                 if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
@@ -397,8 +408,17 @@ namespace TwitchNotifier.src.Twitch {
 
             var cacheEntry = new CacheEntry() {
                 Key = e.Stream.UserId,
-                Value = e.Stream.UserId
+                Value = configEventName
             };
+
+            var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
+            int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
+
+            if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
+                cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
+            } else {
+                cacheEntry.ExpirationTime = DateTime.Now.AddMinutes(2);
+            }
 
             if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
                 var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
