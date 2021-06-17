@@ -271,6 +271,39 @@ TwitchNotifier:
             Text: The footer text (max 2048 chars)
             IconUrl: '%Channel.User.Logo%'
       WebHookUrl: The Discord Webhook URL
+  OnClipCreated:
+    StreamerOption1:
+      Condition: ''
+      Twitch:
+        Usernames:
+        - Channelnames
+      Discord:
+        Username: '%Channel.Name%'
+        AvatarUrl: '%Channel.User.Url%'
+        Content: Content above the embed (max 2048 characters)
+        Embed:
+          Title: '%Channel.Name% went online!'
+          Url: '%Channel.User.Url%'
+          Description: What are you waiting for?!\nGo check it out now!
+          Color: '#5555FF'
+          Timestamp: true
+          Thumbnail: 
+          Image: 
+          Author:
+            Name: "Stream Announcer \U0001F4E2"
+            IconUrl: '%Channel.User.Logo%'
+            Url: '%Channel.User.Url%'
+          Fields:
+          - Name: Unique Field Name 1
+            Value: Value of field 1
+            Inline: false
+          - Name: Unique Field Name 2
+            Value: Value of field 2
+            Inline: false
+          Footer:
+            Text: The footer text (max 2048 chars)
+            IconUrl: '%Channel.User.Logo%'
+      WebHookUrl: The Discord Webhook URL
   OnFollow:
     StreamerOption1:
       Condition: ''
