@@ -12,6 +12,9 @@ namespace TwitchNotifier.src.config {
     /// The configuration of this program
     /// </summary>
     public class Config {
+        public TwitchNotifierSettings TwitchNotifier { get; set; } = new TwitchNotifierSettings();
+        public TwitchSettings Settings { get; set; } = new TwitchSettings();
+
         /// <summary>
         /// The local AppData directory
         /// </summary>
@@ -100,8 +103,5 @@ namespace TwitchNotifier.src.config {
 
             return returnValue;
         }
-
-        public TwitchNotifierSettings TwitchNotifier { get; set; } = new TwitchNotifierSettings();
-        public TwitchSettings Settings { get; set; } = new TwitchSettings();
     }
 }

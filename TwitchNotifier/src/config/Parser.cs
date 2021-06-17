@@ -33,20 +33,6 @@ namespace TwitchNotifier.src.config {
         }
 
         /// <summary>
-        /// Serializes an object to deserialize it into the specified type
-        /// </summary>
-        /// <param name="type">The type to deserialize the object to</param>
-        /// <param name="objectToDeserialize">The object which should be deserialized</param>
-        /// <returns>An object that can be easily casted to the desired type</returns>
-        public static object Deserialize(Type type, object objectToDeserialize) {
-            var serializer = new SerializerBuilder().ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults & DefaultValuesHandling.OmitNull).Build();
-            var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-
-            var yml = serializer.Serialize((dynamic)objectToDeserialize);
-            return deserializer.Deserialize(yml, type);
-        }
-
-        /// <summary>
         /// Serializes an object to deserialize it into the specified type<br/>
         /// EventArgs contains the information for placeholders<br/>
         /// <c>Todo</c>: Make deserializer ignore empty properties from objectToDeserialize
@@ -58,8 +44,8 @@ namespace TwitchNotifier.src.config {
         public static object Deserialize(Type type, object objectToDeserialize, PlaceholderHelper placeholderHelper) {
             var serializer = new SerializerBuilder().ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitDefaults & DefaultValuesHandling.OmitNull).Build();
             var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-
             var yml = serializer.Serialize((dynamic)objectToDeserialize);
+
             yml = new Placeholder().ReplacePlaceholders(yml, placeholderHelper);
             return deserializer.Deserialize(yml, type);
         }
@@ -70,8 +56,6 @@ namespace TwitchNotifier.src.config {
         /// <param name="embed">The embed that should be deserialized to a json string</param>
         /// <returns>Json string of the embed</returns>
         public static string GetEmbedJson(Embed embed) {
-            var returnValue = string.Empty;
-
             var jsonSerializerSettings = new JsonSerializerSettings() {
                 NullValueHandling = NullValueHandling.Ignore,
                 ContractResolver = new DefaultContractResolver {
