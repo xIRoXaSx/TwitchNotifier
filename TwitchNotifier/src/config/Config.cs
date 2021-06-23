@@ -66,13 +66,13 @@ namespace TwitchNotifier.src.config {
                     }.WriteError();
                 }
 
-                Console.WriteLine("Press any key to exit the application...");
+                Logging.Log.Info("Press any key to exit the application...");
                 Console.ReadKey();
             }
 
             if (!File.Exists(configFileLocation)) {
                 File.WriteAllText(configFileLocation, config);
-                Console.WriteLine("Config file has been written to \"" + configFileLocation + "\"");
+                Logging.Log.Info("Config file has been written to \"" + configFileLocation + "\"");
                 returnValue = true;
             }
 

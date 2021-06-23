@@ -7,6 +7,8 @@ using YamlDotNet.Serialization.NamingConventions;
 using TwitchNotifier.src.Placeholders;
 using TwitchNotifier.src.Helper;
 using System.Linq;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace TwitchNotifier.src.config {
     class Parser {
@@ -19,6 +21,23 @@ namespace TwitchNotifier.src.config {
         public const string Contains = ".Contains";
         public const string True = "true";
         public const string False = "false";
+        private static string[] arrayOfSeperators = new[] {
+            Equals,
+            NotEquals,
+            GreaterEquals,
+            LessEquals,
+            GreaterThan,
+            LessThan,
+            Contains,
+            True,
+            False
+        };
+
+        // Enum for logical operators "&&" and "||"
+        public enum LogicalOperator {
+            And = 0,
+            Or = 1
+        }
 
         /// <summary>
         /// Serialize an object to a yaml string
@@ -84,22 +103,11 @@ namespace TwitchNotifier.src.config {
             var returnValue = false;
             string[] seperatedCondition = null;
             var matchedLogicalCondition = string.Empty;
-            var listOfSeperators = new[] {
-                Equals,
-                NotEquals,
-                GreaterEquals,
-                LessEquals,
-                GreaterThan,
-                LessThan,
-                Contains,
-                True,
-                False
-            };
 
             if (!string.IsNullOrEmpty(condition)) {
                 // Check if condition contains one of the strings before trying to split it
-                if (listOfSeperators.Any(x => condition.ToLower().Contains(x.ToLower()))) {
-                    foreach (var logicalCondition in listOfSeperators) {
+                if (arrayOfSeperators.Any(x => condition.ToLower().Contains(x.ToLower()))) {
+                    foreach (var logicalCondition in arrayOfSeperators) {
                         seperatedCondition = condition.Split(logicalCondition, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
 
                         if (seperatedCondition.Length == 2) {
@@ -167,6 +175,154 @@ namespace TwitchNotifier.src.config {
                 returnValue = true;
             }
 
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Get nested parentheses from string
+        /// </summary>
+        /// <param name="value">The string which contains the condition / parentheses</param>
+        /// <returns></returns>
+        private static IEnumerable<string> GetNestedParentheses(string value) {
+            Stack<int> brackets = new Stack<int>();
+            bool containsOpened = false;
+
+            if (string.IsNullOrEmpty(value)) {
+                yield break;
+            }
+
+            for (int i = 0; i < value.Length; ++i) {
+                char currentChar = value[i];
+
+                if (i > 8 && string.Join("", value.Skip(i - 9).Take(9)) == Contains) {
+                    containsOpened = true;
+                }
+
+                if (currentChar == '(' && !containsOpened) {
+                    brackets.Push(i);
+                } else if (currentChar == ')') {
+                    if (containsOpened) {
+                        containsOpened = false;
+                    } else {
+                        int openBracket = brackets.Pop();
+
+                        yield return value.Substring(openBracket + 1, i - openBracket - 1);
+                    }
+                }
+            }
+
+            yield return value;
+        }
+
+        /// <summary>
+        /// Get boolean of a condition (containing parentheses)
+        /// </summary>
+        /// <param name="condition">The condition to check</param>
+        /// <returns></returns>
+        internal static bool GetBooleanOfParenthesesCondition(string condition) {
+            var tempEntry = condition;
+            var openingParenthesesCount = tempEntry.Where(x => x == '(').Count();
+            var closingParenthesesCount = tempEntry.Where(x => x == ')').Count();
+
+            if ((tempEntry.Substring(0, 1) != "(" || tempEntry.Substring(tempEntry.Length - 1, 1) != ")") && (openingParenthesesCount == closingParenthesesCount)) {
+                tempEntry = "(" + condition + ")";
+            } else if (tempEntry.Where(x => x == '(').Count() != tempEntry.Where(x => x == ')').Count()) {
+                // Not every parentheses has been closed / opened
+            }
+
+            var nestedElements = GetNestedParentheses(tempEntry);
+            var count = nestedElements.Count();
+            var lastElement = nestedElements.Last();
+            var result = string.Empty;
+            var lastCondition = string.Empty;
+            var nextLogicalOperator = string.Empty;
+            var lastLogicalOperator = string.Empty;
+
+            for (int i = 0; i < count; i++) {
+                var currentElement = nestedElements.ElementAt(i);
+                var leftOver = lastElement.Replace(currentElement, "").Replace("()", "");
+
+                if (currentElement == lastElement) {
+                    break;
+                }
+
+                var match = Regex.Match(leftOver, @"&&|\|\|");
+                nextLogicalOperator = match.Success ? match.Groups[0].Value : nextLogicalOperator;
+                match = Regex.Match(currentElement, @"\((" + Regex.Escape(lastCondition) + @")\)");
+                var lastLogicalOperatorEnum = lastLogicalOperator == "&&" ? LogicalOperator.And : LogicalOperator.Or;
+                var nextLogicalOperatorEnum = nextLogicalOperator == "&&" ? LogicalOperator.And : LogicalOperator.Or;
+
+                if (match.Success) {
+                    var leftOverBeforeAppending = Regex.Replace(Regex.Replace(currentElement, Regex.Escape(lastCondition), "").Replace("()", ""), @"(&&|\|\|)\s?", "").Trim();
+                    var boolOfLeftOver = CheckEventCondition(leftOverBeforeAppending);
+                    var replacedLastCondition = currentElement.Replace(lastCondition, "").Replace("()", "").Trim();
+
+                    if (replacedLastCondition.Split("&&").Length > 1 || replacedLastCondition.Split("||").Length > 1) {
+                        var tempLogicalOperator = replacedLastCondition.Replace(leftOverBeforeAppending, "").Trim();
+                        lastLogicalOperator = string.IsNullOrEmpty(tempLogicalOperator) || (tempLogicalOperator != "&&" && tempLogicalOperator != "||") ? lastLogicalOperator : tempLogicalOperator;
+                        result = result.Length > 0 ? CalculateAndOr(result + lastLogicalOperator + boolOfLeftOver, lastLogicalOperatorEnum).ToString() : boolOfLeftOver.ToString();
+                    } else {
+                        result = result.Length > 0 ? CalculateAndOr(result + nextLogicalOperator + boolOfLeftOver, nextLogicalOperatorEnum).ToString() : boolOfLeftOver.ToString();
+                    }
+                } else {
+                    var currentElementBoolean = CalculateAndOr(currentElement);
+
+                    if (currentElement.Split("&&").Length > 1 || currentElement.Split("||").Length > 1) {
+                        result = result.Length > 0 ? CalculateAndOr(result + lastLogicalOperator + currentElementBoolean, lastLogicalOperatorEnum).ToString() : currentElementBoolean.ToString();
+                    } else {
+                        result = result.Length > 0 ? CalculateAndOr(result + nextLogicalOperator + currentElementBoolean, nextLogicalOperatorEnum).ToString() : currentElementBoolean.ToString();
+                    }
+                }
+
+                lastLogicalOperator = nextLogicalOperator;
+                lastCondition = currentElement;
+            }
+
+            bool.TryParse(result, out bool returnValue);
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Get the boolean of a condition (containing logical operators)
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <param name="splitWithOperator"></param>
+        /// <returns></returns>
+        private static bool CalculateAndOr(string condition, LogicalOperator splitWithOperator = 0) {
+            var returnValue = true;
+            var oppositeOpertor = splitWithOperator == LogicalOperator.And ? LogicalOperator.Or : LogicalOperator.And;
+            var andCondtions = condition.Split(splitWithOperator == 0 ? "&&" : "||");
+            var lastBoolean = true;
+
+            foreach (var splittedCondition in andCondtions.Select(x => x.Trim())) {
+                if (Regex.Match(splittedCondition, @"\.Contains\(.*\)").Success || IsConditionalString(condition)) {
+                    lastBoolean = CheckEventCondition(splittedCondition);
+                } else if (splittedCondition == True || splittedCondition == False) {
+                    bool.TryParse(splittedCondition, out lastBoolean);
+                } else {
+                    lastBoolean = false;
+                }
+                //} else {
+                //    lastBoolean = CalculateAndOr(splittedCondition, oppositeOpertor);
+                //}
+
+                if (splitWithOperator == LogicalOperator.And) {
+                    returnValue = returnValue && lastBoolean;
+                } else {
+                    returnValue = returnValue || lastBoolean;
+                }
+            }
+
+            return returnValue;
+        }
+
+        /// <summary>
+        /// Check if string is a condition (eg. contains == or !=)
+        /// </summary>
+        /// <param name="condition">The condition to check</param>
+        /// <returns></returns>
+        private static bool IsConditionalString(string condition) {
+            var returnValue = arrayOfSeperators.Any(x => condition.ToLower().Contains(x.ToLower()));
             return returnValue;
         }
     }
