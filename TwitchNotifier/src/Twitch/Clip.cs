@@ -78,7 +78,7 @@ namespace TwitchNotifier.src.Twitch {
         /// <summary>
         /// Send the embed to the desired Webhook on Discord
         /// </summary>
-        /// <param name="clip"></param>
+        /// <param name="clip">The clip to send as an embed</param>
         internal async void SendEmbeddedClip(TwitchLib.Api.Helix.Models.Clips.GetClips.Clip clip) {
             var configEventName = "OnClipCreated";
             var cacheEntry = new CacheEntry() {
@@ -97,8 +97,6 @@ namespace TwitchNotifier.src.Twitch {
                     },
                     Clip = new PlaceHolderClipHelper(clip, channel)
                 };
-
-
 
                 LiveMonitoring.SendEmbed(placeholderHelper, channels);
             } else {

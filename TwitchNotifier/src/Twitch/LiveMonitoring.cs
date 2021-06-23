@@ -119,7 +119,7 @@ namespace TwitchNotifier.src.Twitch {
 
 
             } catch (Exception e) {
-                Console.WriteLine(e);
+                Log.Error(e.Message);
             }
 
             await Task.Delay(-1);
@@ -291,7 +291,8 @@ namespace TwitchNotifier.src.Twitch {
                         Log.Warn("Node \"Condition\" could not be found on eventnode \"" + eventObject.Key + "\"... Defaulted to empty condition!");
                     }
 
-                    if (Parser.CheckEventCondition(condition)) {
+                    //if (Parser.CheckEventCondition(condition)) {
+                    if (Parser.GetBooleanOfParenthesesCondition(condition)) {
                         var embed = Parser.Deserialize(typeof(DiscordEmbed), ((dynamic)eventObject.Value)["Discord"], placeholderHelper);
                         var embedValidation = new EmbedValidation();
                         var result = embedValidation.ValidateEmbed((DiscordEmbed)embed);
@@ -307,6 +308,10 @@ namespace TwitchNotifier.src.Twitch {
                             webHookUrl = ((dynamic)eventObject.Value)["WebHookUrl"],
                             discordEmbed = result.Embed
                         }.SendRequest();
+                    } else {
+                        Log.Debug("Condition returned false therefore not sending the notification!");
+                        Log.Debug("   Condition used: " + (string)((dynamic)eventObject.Value)["Condition"]);
+                        Log.Debug("   Condition repalced: " + condition);
                     }
                 }
             }
