@@ -75,13 +75,16 @@ namespace TwitchNotifier.src.Twitch {
                 Monitor.OnServiceStopped += Monitor_OnServiceStopped;
 
                 Monitor.SetChannelsByName(usernames.Distinct().ToList());
-                await Monitor.UpdateLiveStreamersAsync();
-
+                
                 // As in TwitchLibs dev branch ExpiresIn is always set to 0.
                 // When dev gets merged into main check if ExpiresIn passed threshold and refresh token
                 var validAccessTokenResponse = await API.Auth.ValidateAccessTokenAsync();
                 
+                
                 if (validAccessTokenResponse != null) {
+                    // Update live streams
+                    await Monitor.UpdateLiveStreamersAsync();
+                    
                     // Start the Monitor service
                     Monitor.Start();
 
@@ -115,6 +118,8 @@ namespace TwitchNotifier.src.Twitch {
                     if (enableHotload) {
                         SetFileWatchers();
                     }
+                } else {
+                    Log.Error("The given credentials seem wrong! Please make sure the ClientID and token(s) are correct.");
                 }
 
 
