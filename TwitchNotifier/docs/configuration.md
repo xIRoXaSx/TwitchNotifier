@@ -90,9 +90,9 @@ TwitchNotifier:
 <br/>
 
 ## 📝 Conditions
-In each eventnode you can define a condition (**case sensitive**) which must be met before the web request will be sent.  
+In each eventnode you can define a condition (**case sensitive**) which must be met before the web request (the embed) will be sent.  
 The syntax of those conditions are inspired by common comparison operators.  
-It can be as easy as `true` and `false` but can also be more specific.  
+It can be as easy as `true` and `false` but can also be more specific and complex.  
 If a condition is not set (empty / null) the statement check will be skipped => embed will be sent.  
 In the condition statements [placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Placeholders) can be used as well!  
 Conditions can help you to **customize** your embeds even more!  
@@ -102,18 +102,39 @@ Example of such a custmization is shown below.
 
 Operator | Description | Example
 ---------|-------------|--------
-`==`|Case sensitive - Equal to|`%Stream.GameName% == Just Chatting`
-`!=`|Case sensitive - Not equal to|`%Stream.GameName% != Just Chatting`
-`>=`|Greater than or equal to|`%Stream.ViewerCount% >= 999`
-`<=`|Greater than or equal to|`%Stream.ViewerCount% <= 999`
-`>`|Greater than|`%Stream.ViewerCount% > 999`
-`<`|Less than|`%Stream.ViewerCount% < 999`
-`.Contains()`|Less than|`%Stream.Title%.Contains(Educational)`
+`.Contains()` | Case insensitive - Contains | `%Stream.Title%.Contains(Educational)`
+`==` | Case sensitive - Equal to | `%Stream.GameName% == Just Chatting`
+`!=` | Case sensitive - Not equal to | `%Stream.GameName% != Just Chatting`
+`>=` | Greater than or equal to | `%Stream.ViewerCount% >= 999`
+`<=` | Greater than or equal to | `%Stream.ViewerCount% <= 999`
+`>` | Greater than | `%Stream.ViewerCount% > 999`
+`<` | Less than | `%Stream.ViewerCount% < 999`
+
+***
+<br/>
+
+### 📃 List of logical operators
+
+Operator | Description | Example
+---------|-------------|--------
+`&&` | And - Both statements must return `true` | `%Stream.GameName% == Just Chatting && %Stream.Title%.Contains(Educational)`
+`\|\|` | Or - One of both statements mus return `true` | `%Stream.GameName% == Just Chatting \|\| %Stream.GameName% == Art`
 
 <br/>
 
+## Simple examples
+### ❓ Comparison with `Contains`
+In that specific example the **title** of the stream will be checked. If it is **contains** `Educational` it returns `true` and the embed will be sent! **Case insensitive**
+
+```yaml
+TwitchNotifier:
+OnStreamOnline:
+  StreamerOption1:
+    Condition: "%Stream.Title%.Contains(Educational)"
+```
+
 ### ❓ Comparison with `==`
-In that specific example the **game** which is being played by the streamer will be checked. If it is **equal** to `Just Chatting` it returns `true` and the embed will be sent!
+In that specific example the **game** which is being played by the streamer will be checked. If it is **equal** to `Just Chatting` it returns `true` and the embed will be sent! **Case sensitive**
 
 ```yaml
 TwitchNotifier:
@@ -170,21 +191,33 @@ OnStreamOnline:
     Condition: "%Stream.ViewerCount% < 999"
 ```
 
-### ❓ Comparison with `Contains`
-```yaml
-TwitchNotifier:
-OnStreamOnline:
-  StreamerOption1:
-    Condition: "%Stream.Title%.Contains(Educational)"
+***
+<br/>
+
+## 📝 Advanced examples
+Since placeholders are allowed, you can use more complex conditions.  
+You can wrap your statements in `(` and `)` and concatenate them with [logical operators](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration#-list-of-logical-operators).  
+If a condition is not valid (neither `true` or `false`) it will default to `false`!  
+The deeper the condition is nested, the faster it will get resolved. In the following example the statement encapsulated in parentheses will get resolved **before** the the first one (`%Stream.GameName% == Just Chatting`)  
+
+Example stream title | Example game name
+---------------------|------------------
+*Things I talk about a lot!* | *Just Chatting*
+
+Resolving step by step:
+```
+|     %Stream.GameName% == Just Chatting && (%Stream.Title%.Contains(talk about) || %Stream.Title%.Contains(When live gives you lemons))
+|     %Stream.GameName% == Just Chatting && (true || false)
+|     %Stream.GameName% == Just Chatting && true
+|     true && true
+v     true
 ```
 
 ***
 <br/>
 
-## Mentions and Emojis
+## 💬 Mentions and emojis
 If you want to mention users, channels, roles or if you want to use custom emojis, please use the following syntax in your embeds 
-
-<br/>
 
 Type | Format | Example
 -----|--------|--------
@@ -342,5 +375,4 @@ TwitchNotifier:
 Settings:
   ClientID: Your Client ID
   AccessToken: Your App Access Token
-
 ```
