@@ -49,6 +49,6 @@ To view all available placeholders please check out the [placeholders](https://g
 <br/>
 
 ### Used Libs
-**`TwitchLib.Api`**: [API](https://github.com/TwitchLib/TwitchLib.Api) used to get information from Twitch. Owner: [swiftyspiffy](https://github.com/aaubry)  
+**`TwitchLib.Api`**: [API](https://github.com/TwitchLib/TwitchLib.Api) used to get information from Twitch. Owner: [swiftyspiffy](https://github.com/swiftyspiffy)  
 **`YamlDotNet`**: [API](https://github.com/aaubry/YamlDotNet) used for writing and reading YAML files (config). Owner: [aaubry](https://github.com/aaubry)  
 **`Newtonsoft.Json`**: [API](https://github.com/JamesNK/Newtonsoft.Json) used in YamlDotNet and to (de)-serialize data. Owner: [JamesNK](https://github.com/JamesNK)
