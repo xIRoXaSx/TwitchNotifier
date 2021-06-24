@@ -80,7 +80,6 @@ namespace TwitchNotifier.src.Twitch {
                 // When dev gets merged into main check if ExpiresIn passed threshold and refresh token
                 var validAccessTokenResponse = await API.Auth.ValidateAccessTokenAsync();
                 
-                
                 if (validAccessTokenResponse != null) {
                     // Update live streams
                     await Monitor.UpdateLiveStreamersAsync();
@@ -121,7 +120,6 @@ namespace TwitchNotifier.src.Twitch {
                 } else {
                     Log.Error("The given credentials seem wrong! Please make sure the ClientID and token(s) are correct.");
                 }
-
 
             } catch (Exception e) {
                 Log.Error(e.Message);
