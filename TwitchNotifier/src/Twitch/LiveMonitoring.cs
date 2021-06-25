@@ -87,26 +87,8 @@ namespace TwitchNotifier.src.Twitch {
                     // Start the Monitor service
                     Monitor.Start();
 
-                    Log.Info("Starting clip listener(s)");
-                    
-                    var onClipCreatedEvent = config["TwitchNotifier"]["OnClipCreated"];
-                    var channelClipMonitorUsers = new List<string>();
-
-                    // eventNode is the node for all settings below each event
-                    foreach (var eventNode in onClipCreatedEvent) {
-                        List<string> clipEventUsernameList = ((List<object>)eventNode.Value["Twitch"]["Usernames"]).Select(x => (string)x).ToList();
-                        channelClipMonitorUsers.AddRange(clipEventUsernameList);
-                    }
-
-                    var channelsToMonitorClips = await API.Helix.Users.GetUsersAsync(logins: channelClipMonitorUsers);
-
-                    foreach (var channel in channelsToMonitorClips.Users) {
-                        Log.Debug("  > Channles: ");
-                        Log.Debug("    - " + channel.DisplayName);
-                        
-                        var clip = new Clip();
-                        clip.StartListeneingForClips(channel.Id);
-                    }
+                    // Start the clip listener
+                    StartClipListener(config);
 
                     var enableHotload = true;
 
@@ -129,7 +111,35 @@ namespace TwitchNotifier.src.Twitch {
         }
 
         /// <summary>
-        /// Dispose the Monitor instance
+        /// Start the clip listener
+        /// <param name="config">The configuration as dynamic</param>
+        /// </summary>
+        private async void StartClipListener(dynamic config) {
+            Log.Info("Starting clip listener(s)");
+
+            var onClipCreatedEvent = config["TwitchNotifier"]["OnClipCreated"];
+            var channelClipMonitorUsers = new List<string>();
+
+            // eventNode is the node for all settings below each event
+            foreach (var eventNode in onClipCreatedEvent) {
+                List<string> clipEventUsernameList = ((List<object>)eventNode.Value["Twitch"]["Usernames"]).Select(x => (string)x).ToList();
+                channelClipMonitorUsers.AddRange(clipEventUsernameList);
+            }
+
+            var channelsToMonitorClips = await API.Helix.Users.GetUsersAsync(logins: channelClipMonitorUsers);
+
+            foreach (var channel in channelsToMonitorClips.Users) {
+                Log.Debug("  > Channles: ");
+                Log.Debug("    - " + channel.DisplayName);
+
+                var clip = new Clip();
+                clip.StartListeneingForClips(channel.Id);
+            }
+        }
+
+        /// <summary>
+        /// Dispose the Monitor nad / or API instance
+        /// <param name="disposableInstance">The DisposableInstance which should be disposed</param>
         /// </summary>
         protected virtual void DisposeInstance(DisposableInstance disposableInstance) {
             if (!disposed) {
