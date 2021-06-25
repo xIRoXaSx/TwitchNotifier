@@ -16,6 +16,7 @@
     4. Copy the Client ID + the access token and paste it into the configuration at the bottom:
         ```yaml
         Settings:
+          # [...] Trimmed for readability
           ClientID: <Place The Client ID Here>
           AccessToken: <Place The Access Token Here>
         ```
@@ -30,6 +31,29 @@
         WebHookUrl: <Place The Discord Webhook URL Here>
         ```
     6. (Re-)Start the program and get notified! ☕
+
+***
+<br/>
+
+## 📝 App settings
+- `EnableHotload`: If you want to disable the hotloading feature (updating the config file will update the event listeners), you can set this to `false`. Suggested state: `true`
+
+- `SkipStartupNotifications`: To send all notification on application startup, you can set this to `false`. The downside of it: If you restart the application, all notifications will be sent **again** if one or more of the listed streamers are currently live. Suggested state: `true`
+
+- `NotificationThresholdInSeconds`: The threshold which needs to be exceeded before a new notification (OnStreamOnline) of the same Twitch channel will be sent. This comes in handy if a stream got interrupted and you don't want to receive new notifcations every time.
+
+- 'ClientID': The client ID of the application. Have a look at the [configuration](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration/_edit#-configuration) for further information
+
+- 'AccessToken': The access token of the application. Have a look at the [configuration](https://github.com/xIRoXaSx/TwitchNotifier/wiki/Configuration/_edit#-configuration) for further information
+
+```yaml
+Settings:
+  EnableHotload: true
+  SkipStartupNotifications: true
+  NotificationThresholdInSeconds: 120
+  ClientID: Your Client ID
+  AccessToken: Your App Access Token
+```
 
 ***
 <br/>
@@ -373,6 +397,9 @@ TwitchNotifier:
             IconUrl: '%Channel.User.Logo%'
       WebHookUrl: The Discord Webhook URL
 Settings:
+  EnableHotload: true
+  SkipStartupNotifications: true
+  NotificationThresholdInSeconds: 120
   ClientID: Your Client ID
   AccessToken: Your App Access Token
 ```
