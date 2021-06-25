@@ -3,6 +3,7 @@
     /// Settings for the Twitch channel which are creating events
     /// </summary>
     public class TwitchSettings {
+        public bool Debug { get; set; } = false;
         public bool EnableHotload { get; set; } = true;
         public bool SkipStartupNotifications { get; set; } = true;
         public int NotificationThresholdInSeconds { get; set; } = 120;
