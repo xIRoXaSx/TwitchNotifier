@@ -373,7 +373,7 @@ namespace TwitchNotifier.src.Twitch {
                 };
 
                 var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-                int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
+                int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
                 
                 if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
                     cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
@@ -420,7 +420,7 @@ namespace TwitchNotifier.src.Twitch {
             };
 
             var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-            int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
+            int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
 
             if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
                 cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
