@@ -15,7 +15,7 @@ namespace TwitchNotifier.src {
 
             if (string.IsNullOrEmpty(cacheValue)) {
                 CacheItemPolicy policy = new CacheItemPolicy() {
-                    AbsoluteExpiration = cacheEntry.ExpirationTime,
+                    AbsoluteExpiration = cacheEntry.Priority == CacheItemPriority.NotRemovable ? ObjectCache.InfiniteAbsoluteExpiration : cacheEntry.ExpirationTime,
                     Priority = cacheEntry.Priority
                 };
 
