@@ -80,6 +80,21 @@ namespace TwitchNotifier.src.config {
         }
 
         /// <summary>
+        /// Read the config without locking the file
+        /// </summary>
+        /// <returns>Config file as string</returns>
+        public static string ReadConfigFile() {
+            string returnValue;
+            using (var fileStream = new FileStream(configFileLocation, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (var streamReader = new StreamReader(fileStream, Encoding.UTF8)) {
+                    returnValue = streamReader.ReadToEnd();
+                }
+            }
+
+            return returnValue;
+        }
+
+        /// <summary>
         /// Returns all EventObjects by the event name of a twitch channel
         /// </summary>
         /// <param name="eventName">The name of the event</param>
