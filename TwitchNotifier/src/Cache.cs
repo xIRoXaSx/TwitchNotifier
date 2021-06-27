@@ -1,26 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Caching;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src {
     class Cache {
+        internal static string debugConsole = "Debug";
+
         /// <summary>
         /// Adds a CacheEntry to the MemoryCache
         /// </summary>
         /// <param name="cacheEntry">The CacheEntry to add to the MemoryCache</param>
         public static void AddCacheEntry(CacheEntry cacheEntry) {
-            string cacheValue = (string)MemoryCache.Default[cacheEntry.Key];
+            CacheItemPolicy policy = new CacheItemPolicy() {
+                AbsoluteExpiration = cacheEntry.Priority == CacheItemPriority.NotRemovable ? ObjectCache.InfiniteAbsoluteExpiration : cacheEntry.ExpirationTime,
+                Priority = cacheEntry.Priority
+            };
 
-            if (string.IsNullOrEmpty(cacheValue)) {
-                CacheItemPolicy policy = new CacheItemPolicy() {
-                    AbsoluteExpiration = cacheEntry.Priority == CacheItemPriority.NotRemovable ? ObjectCache.InfiniteAbsoluteExpiration : cacheEntry.ExpirationTime,
-                    Priority = cacheEntry.Priority
-                };
-
-                MemoryCache.Default.Set(cacheEntry.Key, cacheEntry, policy);
-            }
+            MemoryCache.Default.Set(cacheEntry.Key, cacheEntry, policy);
         }
 
         /// <summary>
@@ -83,6 +84,28 @@ namespace TwitchNotifier.src {
             }
 
             return returnValue;
+        }
+
+        /// <summary>
+        /// Set cached element from changed config
+        /// </summary>
+        /// <param name="changes">The changes made</param>
+        internal static void SetCacheFromChangedConfig(List<string> changes) {
+            foreach (var change in changes.Select(x => x.Trim()).ToList()) {
+                var match = Regex.Match(change, @"Debug: (.*)");
+
+                if (match.Success) {
+                    var cacheEntry = (CacheEntry)MemoryCache.Default.Get(debugConsole) ?? new CacheEntry() {
+                        Priority = CacheItemPriority.NotRemovable,
+                        CreateSha256Sum = false,
+                        Key = debugConsole
+                    };
+
+                    cacheEntry.Value = match.Groups[1].Value;
+
+                    AddCacheEntry(cacheEntry);
+                }
+            }
         }
     }
 }
