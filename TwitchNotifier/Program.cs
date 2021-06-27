@@ -16,6 +16,8 @@ namespace TwitchNotifier {
             
             if (!config.CreateConfig()) {
                 var deserializer = new DeserializerBuilder().Build();
+                var deserializedConfig = (dynamic)deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
+
                 var listOfCacheEntries = new List<CacheEntry>() {
                     new CacheEntry() {
                         Priority = CacheItemPriority.NotRemovable,
@@ -25,14 +27,23 @@ namespace TwitchNotifier {
                     new CacheEntry() {
                         Priority = CacheItemPriority.NotRemovable,
                         Key = LiveMonitoring.defaultSkipStartupNotifications,
-                        Value = ((dynamic)deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8))?["Settings"]?[LiveMonitoring.defaultSkipStartupNotifications])
+                        Value = (deserializedConfig?["Settings"]?[LiveMonitoring.defaultSkipStartupNotifications])
                     },
                     new CacheEntry() {
                         Priority = CacheItemPriority.NotRemovable,
                         Key = LiveMonitoring.defaultNotificationThresholdInSeconds,
-                        Value = ((dynamic)deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8))?["Settings"]?[LiveMonitoring.defaultNotificationThresholdInSeconds])
+                        Value = (deserializedConfig?["Settings"]?[LiveMonitoring.defaultNotificationThresholdInSeconds])
                     }
                 };
+
+                if (deserializedConfig["Settings"].ContainsKey("Debug")) {
+                    listOfCacheEntries.Add(new CacheEntry() {
+                        Priority = CacheItemPriority.NotRemovable,
+                        CreateSha256Sum = false,
+                        Key = Cache.debugConsole,
+                        Value = deserializedConfig["Settings"]["Debug"]
+                    });;
+                }
 
                 foreach (var cacheEntry in listOfCacheEntries) {
                     Cache.CheckCacheEntryExpiration(cacheEntry);
