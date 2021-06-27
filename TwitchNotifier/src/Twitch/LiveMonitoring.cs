@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Caching;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Services;
@@ -183,58 +184,89 @@ namespace TwitchNotifier.src.Twitch {
         private void HotloadConfig(object sender, FileSystemEventArgs e) {
             var cachedConfig = MemoryCache.Default.Get(Cache.HashString(defaultConfigCacheKey));
             var needToDispose = false;
+            var afterChange = new List<string>();
+            var beforeChange = new List<string>();
+            var configText = string.Empty;
+            dynamic config = null;
 
             if (cachedConfig != null) {
-                List<string> beforeChange;
-                List<string> afterChange;
                 IEnumerable<string> configOld = ((CacheEntry)cachedConfig).Value.ToString().Split(Environment.NewLine).Distinct();
 
                 try {
-                    using (FileStream fileStream = new FileStream(e.FullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (StreamReader streamReader = new StreamReader(fileStream)) {
-                            IEnumerable<string> configNew = streamReader.ReadToEnd().Split(Environment.NewLine).Distinct(); // ReadConfigNotifierSettings(e.FullPath);
-                            afterChange = configOld.Except(configNew).ToList();
-                            beforeChange = configNew.Except(configOld).ToList();
-                        }
-                    }
-
-                    // If afterChange is in node "Usernames" or is value of "WebHookUrl", dispose Monitor instance
-                    var deserializer = new DeserializerBuilder().Build();
-                    var config = deserializer.Deserialize<dynamic>(File.ReadAllText(Config.configFileLocation, Encoding.UTF8));
-                    var oldConfig = deserializer.Deserialize<dynamic>((((CacheEntry)cachedConfig).Value.ToString()));
-                    List<string> twitchChannelsAfterwards = GetAllTwitchUsernamesFromConfig(config);
-                    List<string> twitchChannelsBefore = GetAllTwitchUsernamesFromConfig(oldConfig);
-                    List<string> webhookUrlsAfterwards = new List<string>();
-                    List<string> webhookUrlsBefore = new List<string>();
-
-                    webhookUrlsAfterwards = GetWebhookProperties(config, "WebHookUrl");
-                    webhookUrlsBefore = GetWebhookProperties(oldConfig, "WebHookUrl");
-
-                    // Line removed from config file
-                    var twitchChannelsModified = afterChange.Select(x => x.Trim()).Any(x => twitchChannelsBefore.Contains(x.Replace("- ", "")) && !twitchChannelsAfterwards.Contains(x.Replace("- ", "")));
-                    var webhooksModified = afterChange.Select(x => x.Trim()).Any(x => webhookUrlsBefore.Contains(x.Replace("WebHookUrl: ", "")) && !webhookUrlsAfterwards.Contains(x.Replace("WebHookUrl: ", "")));
-                    needToDispose = twitchChannelsModified || webhooksModified;
-
-                    // Line added to config file
-                    if (!needToDispose) {
-                        twitchChannelsModified = beforeChange.Select(x => x.Trim()).Any(x => !twitchChannelsBefore.Contains(x.Replace("- ", "")) && twitchChannelsAfterwards.Contains(x.Replace("- ", "")));
-                        webhooksModified = beforeChange.Select(x => x.Trim()).Any(x => !webhookUrlsBefore.Contains(x.Replace("WebHookUrl: ", "")) && webhookUrlsAfterwards.Contains(x.Replace("WebHookUrl: ", "")));
-                        needToDispose = twitchChannelsModified || webhooksModified;
-                    }
-
+                    IEnumerable<string> configNew = Config.ReadConfigFile().Split(Environment.NewLine).Distinct();
+                    beforeChange = configOld.Except(configNew).ToList();
+                    afterChange = configNew.Except(configOld).ToList();
                 } catch (Exception ex) {
                     Log.Error("Cannot read config file: " + ex.Message);
                 }
+
+                // If afterChange is in node "Usernames" or is value of "WebHookUrl", dispose Monitor instance
+                var deserializer = new DeserializerBuilder().Build();
+                configText = Config.ReadConfigFile();
+                config = deserializer.Deserialize<dynamic>(configText);
+                
+                if (config == null) {
+                    return;
+                }
+                
+                var oldConfig = deserializer.Deserialize<dynamic>((((CacheEntry)cachedConfig).Value.ToString()));
+                List<string> twitchChannelsAfterwards = GetAllTwitchUsernamesFromConfig(config);
+                List<string> twitchChannelsBefore = GetAllTwitchUsernamesFromConfig(oldConfig);
+                List<string> webhookUrlsAfterwards = new List<string>();
+                List<string> webhookUrlsBefore = new List<string>();
+
+                webhookUrlsAfterwards = GetWebhookProperties(config, "WebHookUrl");
+                webhookUrlsBefore = GetWebhookProperties(oldConfig, "WebHookUrl");
+
+                // Line removed from config file
+                var twitchChannelsModified = beforeChange.Select(x => x.Trim()).Any(x => twitchChannelsBefore.Contains(x.Replace("- ", "")) && !twitchChannelsAfterwards.Contains(x.Replace("- ", "")));
+                var webhooksModified = beforeChange.Select(x => x.Trim()).Any(x => webhookUrlsBefore.Contains(x.Replace("WebHookUrl: ", "")) && !webhookUrlsAfterwards.Contains(x.Replace("WebHookUrl: ", "")));
+                needToDispose = twitchChannelsModified || webhooksModified;
+
+                // Line added to config file
+                if (!needToDispose) {
+                    twitchChannelsModified = afterChange.Select(x => x.Trim()).Any(x => !twitchChannelsBefore.Contains(x.Replace("- ", "")) && twitchChannelsAfterwards.Contains(x.Replace("- ", "")));
+                    webhooksModified = afterChange.Select(x => x.Trim()).Any(x => !webhookUrlsBefore.Contains(x.Replace("WebHookUrl: ", "")) && webhookUrlsAfterwards.Contains(x.Replace("WebHookUrl: ", "")));
+                    needToDispose = twitchChannelsModified || webhooksModified;
+                }
             }
             
+            // CacheEntry to check if file has been saved multiple times
             var cacheEntry = new CacheEntry() {
+                ExpirationTime = DateTime.Now.AddSeconds(2),
                 Key = e.FullPath,
                 Value = string.Empty
             };
 
             if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                var changedDebugSetting = false;
                 Log.Debug("Configuration file has been changed!");
-                
+
+                if (config["Settings"].ContainsKey("Debug")) {
+                    bool.TryParse(config["Settings"]["Debug"], out changedDebugSetting);
+                }
+
+                var fileStreamText = Config.ReadConfigFile();
+                var cachEntryList = new List<CacheEntry>() { 
+                    // CacheEntry to update the debug status
+                    new CacheEntry() {
+                        Priority = CacheItemPriority.NotRemovable,
+                        Key = Cache.debugConsole,
+                        Value = changedDebugSetting
+                    },
+
+                    // CacheEntry to update the cached config
+                    new CacheEntry() {
+                        Priority = CacheItemPriority.NotRemovable,
+                        Key = defaultConfigCacheKey,
+                        Value = fileStreamText
+                    }
+                };
+
+                foreach (var entry in cachEntryList) {
+                    Cache.AddCacheEntry(entry);
+                }
+
                 if (needToDispose) {
                     Log.Debug("Disposing Monitor!");
                     DisposeInstance(DisposableInstance.Monitor);
@@ -243,7 +275,12 @@ namespace TwitchNotifier.src.Twitch {
                 }
             } else {
                 var cachedEntry = MemoryCache.Default.Get(cacheEntry.Key);
-                Log.Debug("Cooldown: " + (((CacheEntry)cachedEntry).ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                
+                try {
+                    Log.Debug("Cooldown: " + (((CacheEntry)cachedEntry).ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                } catch {
+                    Log.Debug("Cooldown is now over!");
+                }
             }
         }
 
@@ -383,8 +420,8 @@ namespace TwitchNotifier.src.Twitch {
                 };
 
                 var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-                int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
-                
+                int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
+
                 if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
                     cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
                 } else {
@@ -430,7 +467,7 @@ namespace TwitchNotifier.src.Twitch {
             };
 
             var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-            int.TryParse(notificationThresholdInSeconds.Value.ToString(), out int notificationThresholdInSecondsParsed);
+            int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
 
             if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
                 cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);

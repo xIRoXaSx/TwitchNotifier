@@ -224,10 +224,12 @@ namespace TwitchNotifier.src.config {
             var openingParenthesesCount = tempEntry.Where(x => x == '(').Count();
             var closingParenthesesCount = tempEntry.Where(x => x == ')').Count();
 
-            if ((tempEntry.Substring(0, 1) != "(" || tempEntry.Substring(tempEntry.Length - 1, 1) != ")") && (openingParenthesesCount == closingParenthesesCount)) {
+            if (tempEntry.Length > 0 && (tempEntry.Substring(0, 1) != "(" || tempEntry.Substring(tempEntry.Length - 1, 1) != ")") && (openingParenthesesCount == closingParenthesesCount)) {
                 tempEntry = "(" + condition + ")";
             } else if (tempEntry.Where(x => x == '(').Count() != tempEntry.Where(x => x == ')').Count()) {
                 // Not every parentheses has been closed / opened
+            } else if (tempEntry.Length == 0) {
+                return true;
             }
 
             var nestedElements = GetNestedParentheses(tempEntry);

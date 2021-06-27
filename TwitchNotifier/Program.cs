@@ -40,7 +40,7 @@ namespace TwitchNotifier {
                     listOfCacheEntries.Add(new CacheEntry() {
                         Priority = CacheItemPriority.NotRemovable,
                         CreateSha256Sum = false,
-                        Key = "Debug",
+                        Key = Cache.debugConsole,
                         Value = deserializedConfig["Settings"]["Debug"]
                     });;
                 }
