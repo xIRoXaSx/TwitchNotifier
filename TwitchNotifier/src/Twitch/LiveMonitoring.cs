@@ -129,8 +129,9 @@ namespace TwitchNotifier.src.Twitch {
 
             var channelsToMonitorClips = await API.Helix.Users.GetUsersAsync(logins: channelClipMonitorUsers);
 
+            Log.Debug("  > Channles:");
+            
             foreach (var channel in channelsToMonitorClips.Users) {
-                Log.Debug("  > Channles: ");
                 Log.Debug("    - " + channel.DisplayName);
 
                 var clip = new Clip();
@@ -361,7 +362,7 @@ namespace TwitchNotifier.src.Twitch {
                     } else {
                         Log.Debug("Condition returned false therefore not sending the notification!");
                         Log.Debug("   Condition used: " + (string)((dynamic)eventObject.Value)["Condition"]);
-                        Log.Debug("   Condition repalced: " + condition);
+                        Log.Debug("   Condition replaced: " + condition);
                     }
                 }
             }
