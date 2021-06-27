@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.Caching;
 using TwitchNotifier.src.config;
+using TwitchNotifier.src.Helper;
 
 namespace TwitchNotifier.src.Logging {
     class Log {
@@ -23,15 +25,20 @@ namespace TwitchNotifier.src.Logging {
         /// </summary>
         /// <param name="text">The text to log</param>
         public static void Debug(string text) {
-            var colorBeforeChange = Console.ForegroundColor;
+            bool debug = false;
+            bool.TryParse(((CacheEntry)MemoryCache.Default.Get("Debug")).Value.ToString(), out debug);
 
-            Console.Write("[" + GetLogDateString() + "] ");
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.Write("DBG: ");
+            if (MemoryCache.Default.Contains("Debug") && debug) {
+                var colorBeforeChange = Console.ForegroundColor;
 
-            Console.ForegroundColor = colorBeforeChange;
-            Console.WriteLine(text);
-            LogToFile(text);
+                Console.Write("[" + GetLogDateString() + "] ");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("DBG: ");
+
+                Console.ForegroundColor = colorBeforeChange;
+                Console.WriteLine(text);
+                LogToFile(text);
+            }
         }
 
         /// <summary>
