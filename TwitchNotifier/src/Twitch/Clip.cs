@@ -95,7 +95,7 @@ namespace TwitchNotifier.src.Twitch {
                         Name = channel.Name,
                         User = channel
                     },
-                    Clip = new PlaceHolderClipHelper(clip, channel)
+                    Clip = new PlaceHolderClipHelper(clip, await API.V5.Channels.GetChannelByIDAsync(clip.CreatorId))
                 };
 
                 LiveMonitoring.SendEmbed(placeholderHelper, channels);
