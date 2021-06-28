@@ -1,4 +1,4 @@
-﻿# TwitchNotifier 💬
+﻿﻿# TwitchNotifier 💬
 ## 🔗 Placeholders
 Most placeholders are parsed object oriented. All of them can either be found at the documentation of TwitchLib or down below.  
 Each placeholder needs to be surrounded with `%` and can be used everwhere in embeds.  
@@ -65,16 +65,16 @@ Placeholder|Type|Description
 `%Clip.Creator.VideoBanner%` | String | The URL of the clip creators video banner
 `%Clip.Creator.Views%` | Int | The amount of views the clip creators channel has
 ||
-`%Clip.BroadcasterId%` | String | 
-`%Clip.CreatedAt%` | String | 
-`%Clip.CreatorId%` | String | 
-`%Clip.Duration%` | Float | 
-`%Clip.EmbedUrl%` | String | 
-`%Clip.GameId%` | String | 
-`%Clip.Id%` | String | 
-`%Clip.Language%` | String | 
-`%Clip.ThumbnailUrl%` | String | 
-`%Clip.Title%` | String | 
-`%Clip.Url%` | String | 
-`%Clip.VideoId%` | String | 
-`%Clip.ViewCount%` | Int | 
+`%Clip.BroadcasterId%` | String | The ID of the channel
+`%Clip.CreatedAt%` | String | The time when the clip has been created
+`%Clip.CreatorId%` | String | The ID of the channel which created the clip
+`%Clip.Duration%` | Float | The duration of the clip
+`%Clip.EmbedUrl%` | String | The embed url of the clip
+`%Clip.GameId%` | String | The Game ID of played game in the clip
+`%Clip.Id%` | String | The ID of the clip
+`%Clip.Language%` | String | The Language of the clip
+`%Clip.ThumbnailUrl%` | String | The URL of the clip's thumbnail
+`%Clip.Title%` | String | The title of the clip
+`%Clip.Url%` | String | The clip's URL
+`%Clip.VideoId%` | String | The ID of the video
+`%Clip.ViewCount%` | Int | The amount of views of the clip
