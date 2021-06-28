@@ -413,7 +413,7 @@ namespace TwitchNotifier.src.Twitch {
         private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
             if (sendNotifications) {
                 var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-                Log.Info(e.Channel + " is live right now!");
+                Log.Info(e.Channel + " went online!");
 
                 var cacheEntry = new CacheEntry() {
                     Key = e.Stream.UserId,
@@ -462,7 +462,7 @@ namespace TwitchNotifier.src.Twitch {
         /// <param name="e">The event args</param>
         private async void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
             var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-            Log.Debug(e.Channel + " went offline!");
+            Log.Info(e.Channel + " went offline!");
 
             var cacheEntry = new CacheEntry() {
                 Key = e.Stream.UserId,
