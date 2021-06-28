@@ -26,7 +26,7 @@ namespace TwitchNotifier.src.Logging {
         /// <param name="text">The text to log</param>
         public static void Debug(string text) {
             bool debug = false;
-            bool.TryParse(((CacheEntry)MemoryCache.Default.Get("Debug")).Value.ToString(), out debug);
+            bool.TryParse(((CacheEntry)MemoryCache.Default.Get("Debug"))?.Value.ToString(), out debug);
 
             if (MemoryCache.Default.Contains("Debug") && debug) {
                 var colorBeforeChange = Console.ForegroundColor;
