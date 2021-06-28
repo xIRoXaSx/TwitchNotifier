@@ -442,11 +442,13 @@ namespace TwitchNotifier.src.Twitch {
                     SendEmbed(placeholderHelper, channels);
                 } else {
                     var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(e.Stream.UserId));
-                    Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
+                    string cooldownMessage = "Event \"" + configEventName + "\" triggered multiple times... Still in cooldown!";
 
                     if (cachedChannelEntry != null) {
-                        Log.Debug("Cooldown: " + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                        cooldownMessage += " (" + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
                     }
+
+                    Log.Debug(cooldownMessage);
                 }
             } else {
                 Log.Debug(e.Channel + " is live right now but startup has not finished yet! " + "(\"" + defaultSkipStartupNotifications + "\" = " + !sendNotifications + ")");
@@ -488,8 +490,13 @@ namespace TwitchNotifier.src.Twitch {
 
                 SendEmbed(placeholderHelper, channels);
             } else {
-                Log.Debug("Event \"" + configEventName + "\" triggered multiple times! Still in cooldown!");
-                Log.Debug("Cooldown: " + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds");
+                string cooldownMessage = "Event \"" + configEventName + "\" triggered multiple times... Still in cooldown!";
+
+                if (cacheEntry != null) {
+                    cooldownMessage += " (" + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
+                }
+
+                Log.Debug(cooldownMessage);
             }
         }
         #endregion
