@@ -45,28 +45,32 @@ namespace TwitchNotifier.src.Twitch {
                         latestClip = initialClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
 
                         while (!cancelToken.IsCancellationRequested) {
-                            recentClips = await API.Helix.Clips.GetClipsAsync(
-                                broadcasterId: channelId, 
-                                startedAt: Convert.ToDateTime(latestClip?.CreatedAt ?? DateTime.Now.AddDays(-1).ToString()), 
-                                endedAt: DateTime.Now
-                            );
+                            try {
+                                recentClips = await API.Helix.Clips.GetClipsAsync(
+                                    broadcasterId: channelId, 
+                                    startedAt: Convert.ToDateTime(latestClip?.CreatedAt ?? DateTime.Now.AddDays(-1).ToString()), 
+                                    endedAt: DateTime.Now
+                                );
 
-                            if (recentClips.Clips.Length > 0 && sendNotifications) {
-                                // Check if the newest clip does not have the same URL as the last clip
-                                if ((recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault().Url != latestClip?.Url)) {
-                                    Log.Debug("Found new clip(s)!");
+                                if (recentClips.Clips.Length > 0 && sendNotifications) {
+                                    // Check if the newest clip does not have the same URL as the last clip
+                                    if ((recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault().Url != latestClip?.Url)) {
+                                        Log.Debug("Found new clip(s)!");
 
-                                    foreach (var recentClip in recentClips.Clips) {
-                                        // Create and send embed
-                                        SendEmbeddedClip(recentClip);
+                                        foreach (var recentClip in recentClips.Clips) {
+                                            // Create and send embed
+                                            SendEmbeddedClip(recentClip);
+                                        }
+
+                                        latestClip = recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
                                     }
-
-                                    latestClip = recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
                                 }
-                            }
 
-                            sendNotifications = true;
-                            await Task.Delay(10 * 1000);
+                                sendNotifications = true;
+                                await Task.Delay(10 * 1000);
+                            } catch (Exception ex) {
+                                Log.Error("Inneer Exception: " + ex.Message);
+                            }
                         }
                     }
                 } catch (Exception ex) {
@@ -84,7 +88,7 @@ namespace TwitchNotifier.src.Twitch {
             var cacheEntry = new CacheEntry() {
                 Key = clip.Url,
                 Value = string.Empty,
-                ExpirationTime = DateTime.Now.AddSeconds(10)
+                ExpirationTime = DateTime.Now.AddHours(12)
             };
             
             if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
