@@ -5,9 +5,25 @@ You came to the right place if this describes your problem!
 With TwitchNotifier you can customize which **events** should trigger messages for your Discord server and how they should look like!  
 The setup is quickly done in a few minutes and the integrated **placeholders** will make your life even easier!  
 Sounds too good to be true? Try it out and see! 😊
-Example of an embed (stream went online) | Example of an embed (clip has been created)
------------------------------------------|--------------------------------------------
-![DiscordEmbed](https://user-images.githubusercontent.com/38859398/122478113-1a352a00-cfc9-11eb-9d6d-8d2616876627.png) | ![DiscordClipEmbed](https://user-images.githubusercontent.com/38859398/122477292-c37b2080-cfc7-11eb-91de-241fbcd33865.png)
+<table border=0>
+  <body>
+    <th>
+      Embed live notification
+    </th>
+    <th>
+      Embed clip notification
+    </th>
+    <tr>
+      <td>
+        <img src="https://user-images.githubusercontent.com/38859398/122478113-1a352a00-cfc9-11eb-9d6d-8d2616876627.png" alt="DiscordEmbedLiveNotification" height="515px">
+      </td>
+      <td>
+          <img src="https://user-images.githubusercontent.com/38859398/131918696-ada30f16-4e50-44b5-9e2a-d18da43ab5f4.png" alt="DiscordEmbedClipNotification" height="515px">
+        </td>
+    </tr>
+    </body>
+</table>
+
 ***
 <br/>
 
