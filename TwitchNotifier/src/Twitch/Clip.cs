@@ -69,7 +69,7 @@ namespace TwitchNotifier.src.Twitch {
                                 sendNotifications = true;
                                 await Task.Delay(10 * 1000);
                             } catch (Exception ex) {
-                                Log.Error("Inneer Exception: " + ex.Message);
+                                Log.Error("Inner Exception: " + ex.Message);
                             }
                         }
                     }
