@@ -28,7 +28,6 @@ namespace TwitchNotifier.src.Twitch {
 
             await Task.Run(async () => {
                 try {
-                    GetClipsResponse initialClips = null;
                     GetClipsResponse recentClips = null;
                     TwitchLib.Api.Helix.Models.Clips.GetClips.Clip latestClip = null;
 
@@ -40,24 +39,20 @@ namespace TwitchNotifier.src.Twitch {
                     API.Settings.AccessToken = config["Settings"]["AccessToken"];
                 
                     if (await API.Auth.ValidateAccessTokenAsync() != null) {
-                        // Get initial clips (max 1 day back) to sort and use its CreatedAt property
-                        initialClips = await API.Helix.Clips.GetClipsAsync(broadcasterId: channelId, startedAt: DateTime.Now.AddDays(-1), endedAt: DateTime.Now);
-                        latestClip = initialClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault();
-
                         while (!cancelToken.IsCancellationRequested) {
                             try {
                                 recentClips = await API.Helix.Clips.GetClipsAsync(
                                     broadcasterId: channelId, 
-                                    startedAt: Convert.ToDateTime(latestClip?.CreatedAt ?? DateTime.Now.AddDays(-1).ToString()), 
+                                    startedAt: DateTime.Now.AddSeconds(-21),
                                     endedAt: DateTime.Now
                                 );
 
                                 if (recentClips.Clips.Length > 0 && sendNotifications) {
                                     // Check if the newest clip does not have the same URL as the last clip
-                                    if ((recentClips.Clips.OrderByDescending(x => x.CreatedAt).ToList().FirstOrDefault().Url != latestClip?.Url)) {
+                                    if ((recentClips.Clips.OrderByDescending(x => x?.CreatedAt).ToList().FirstOrDefault() != latestClip)) {
                                         Log.Debug("Found new clip(s)!");
 
-                                        foreach (var recentClip in recentClips.Clips) {
+                                        foreach (TwitchLib.Api.Helix.Models.Clips.GetClips.Clip recentClip in recentClips.Clips) {
                                             // Create and send embed
                                             SendEmbeddedClip(recentClip);
                                         }
