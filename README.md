@@ -52,15 +52,13 @@ To view all available placeholders please check out [Placeholders](https://githu
 |Hotloading | Will hotload modified settings without restarting the app |✅|
 |Events | Adding multiple events like Follows, ect |⭕|
 |Implement custom token generation | Will give you the option to set up the Client ID and Token using the app |📅|
-|Local Webinterface | Will give you another way to set up the configuration and add a way to inspect the event history |❌|
 |Grab a cup of coffee | Will give one clear sight |✅⭕📅|
 
 <br/>
 
 📅 => Planned  
 ✅ => Implemented  
-⭕ => Currently being worked on  
- => Dropped
+⭕ => Currently being worked on
 
  To see which features are currently implemented please head over to the [project boards](https://github.com/xIRoXaSx/TwitchNotifier/projects)
 ***
