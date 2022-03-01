@@ -25,20 +25,19 @@ namespace TwitchNotifier.src.Logging {
         /// </summary>
         /// <param name="text">The text to log</param>
         public static void Debug(string text) {
-            bool debug = false;
+            var debug = false;
             bool.TryParse(((CacheEntry)MemoryCache.Default.Get("Debug"))?.Value.ToString(), out debug);
 
-            if (MemoryCache.Default.Contains("Debug") && debug) {
-                var colorBeforeChange = Console.ForegroundColor;
+            if (!MemoryCache.Default.Contains("Debug") || !debug)
+                return;
 
-                Console.Write("[" + GetLogDateString() + "] ");
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write("DBG: ");
-
-                Console.ForegroundColor = colorBeforeChange;
-                Console.WriteLine(text);
-                LogToFile(text);
-            }
+            var colorBeforeChange = Console.ForegroundColor;
+            Console.Write("[" + GetLogDateString() + "] ");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write("DBG: ");
+            Console.ForegroundColor = colorBeforeChange;
+            Console.WriteLine(text);
+            LogToFile(text);
         }
 
         /// <summary>
@@ -47,11 +46,9 @@ namespace TwitchNotifier.src.Logging {
         /// <param name="text">The text to log</param>
         public static void Info(string text) {
             var colorBeforeChange = Console.ForegroundColor;
-            
             Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("INF: ");
-
             Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
         }
@@ -62,11 +59,9 @@ namespace TwitchNotifier.src.Logging {
         /// <param name="text">The text to log</param>
         public static void Warn(string text) {
             var colorBeforeChange = Console.ForegroundColor;
-
             Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("WRN: ");
-
             Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
         }
@@ -77,11 +72,9 @@ namespace TwitchNotifier.src.Logging {
         /// <param name="text">The text to log</param>
         public static void Error(string text) {
             var colorBeforeChange = Console.ForegroundColor;
-
             Console.Write("[" + GetLogDateString() + "] ");
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Write("ERR: ");
-
             Console.ForegroundColor = colorBeforeChange;
             Console.WriteLine(text);
         }
@@ -89,14 +82,14 @@ namespace TwitchNotifier.src.Logging {
         /// <summary>
         /// Gets the date and time for console logging (eg.: 2021-05-21 09:00:01)
         /// </summary>
-        public static string GetLogDateString() {
+        private static string GetLogDateString() {
             return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
         /// <summary>
         /// Gets the date and time for file logging (eg.: 2021-05-21_09-00-01)
         /// </summary>
-        public static string GetLogFileDateString() {
+        private static string GetLogFileDateString() {
             return DateTime.Now.ToString("yyyy-MM-dd");
         }
     }
