@@ -411,9 +411,63 @@ namespace TwitchNotifier.src.Twitch {
         /// <param name="sender">The sender object</param>
         /// <param name="e">The event args</param>
         private async void Monitor_OnStreamOnline(object sender, OnStreamOnlineArgs e) {
-            if (sendNotifications) {
+            try {
+                if (sendNotifications) {
+                    var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
+                    Log.Info(e.Channel + " went online!");
+
+                    var cacheEntry = new CacheEntry() {
+                        Key = e.Stream.UserId,
+                        Value = configEventName
+                    };
+
+                    var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
+                    int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
+
+                    if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
+                        cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
+                    } else {
+                        cacheEntry.ExpirationTime = DateTime.Now.AddMinutes(2);
+                    }
+
+                    if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
+                        var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                        var placeholderHelper = new PlaceholderHelper() {
+                            Stream = e.Stream,
+                            Channel = new PlaceHolderChannelHelper() {
+                                Name = e.Channel,
+                                User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
+                            }
+                        };
+
+                        SendEmbed(placeholderHelper, channels);
+                    } else {
+                        var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(e.Stream.UserId));
+                        string cooldownMessage = "Event \"" + configEventName + "\" triggered multiple times... Still in cooldown!";
+
+                        if (cachedChannelEntry != null) {
+                            cooldownMessage += " (" + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
+                        }
+
+                        Log.Debug(cooldownMessage);
+                    }
+                } else {
+                    Log.Debug(e.Channel + " is live right now but startup has not finished yet! " + "(\"" + defaultSkipStartupNotifications + "\" = " + !sendNotifications + ")");
+                }
+            } catch (Exception ex) {
+                Log.Error("Unable to send online notification: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Called when stream went offlne<br/>
+        /// </summary>
+        /// <param name="sender">The sender object</param>
+        /// <param name="e">The event args</param>
+        private async void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
+            try {
                 var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-                Log.Info(e.Channel + " went online!");
+                Log.Info(e.Channel + " went offline!");
 
                 var cacheEntry = new CacheEntry() {
                     Key = e.Stream.UserId,
@@ -441,62 +495,16 @@ namespace TwitchNotifier.src.Twitch {
 
                     SendEmbed(placeholderHelper, channels);
                 } else {
-                    var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(e.Stream.UserId));
                     string cooldownMessage = "Event \"" + configEventName + "\" triggered multiple times... Still in cooldown!";
 
-                    if (cachedChannelEntry != null) {
-                        cooldownMessage += " (" + (cachedChannelEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
+                    if (cacheEntry != null) {
+                        cooldownMessage += " (" + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
                     }
 
                     Log.Debug(cooldownMessage);
-                }
-            } else {
-                Log.Debug(e.Channel + " is live right now but startup has not finished yet! " + "(\"" + defaultSkipStartupNotifications + "\" = " + !sendNotifications + ")");
-            }
-        }
-
-        /// <summary>
-        /// Called when stream went offlne<br/>
-        /// </summary>
-        /// <param name="sender">The sender object</param>
-        /// <param name="e">The event args</param>
-        private async void Monitor_OnStreamOffline(object sender, OnStreamOfflineArgs e) {
-            var configEventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-            Log.Info(e.Channel + " went offline!");
-
-            var cacheEntry = new CacheEntry() {
-                Key = e.Stream.UserId,
-                Value = configEventName
-            };
-
-            var notificationThresholdInSeconds = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(defaultNotificationThresholdInSeconds));
-            int.TryParse(notificationThresholdInSeconds?.Value.ToString(), out int notificationThresholdInSecondsParsed);
-
-            if (notificationThresholdInSeconds != null && (notificationThresholdInSecondsParsed) > -1) {
-                cacheEntry.ExpirationTime = DateTime.Now.AddSeconds(notificationThresholdInSecondsParsed);
-            } else {
-                cacheEntry.ExpirationTime = DateTime.Now.AddMinutes(2);
-            }
-
-            if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
-                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
-                var placeholderHelper = new PlaceholderHelper() {
-                    Stream = e.Stream,
-                    Channel = new PlaceHolderChannelHelper() {
-                        Name = e.Channel,
-                        User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
-                    }
-                };
-
-                SendEmbed(placeholderHelper, channels);
-            } else {
-                string cooldownMessage = "Event \"" + configEventName + "\" triggered multiple times... Still in cooldown!";
-
-                if (cacheEntry != null) {
-                    cooldownMessage += " (" + (cacheEntry.ExpirationTime - DateTime.Now).TotalSeconds + " seconds)";
-                }
-
-                Log.Debug(cooldownMessage);
+                }   
+            } catch (Exception ex) {
+                Log.Error("Unable to send offline notification: " + ex.Message);
             }
         }
         #endregion
