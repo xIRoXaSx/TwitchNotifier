@@ -3,7 +3,7 @@
 Most placeholders are parsed object oriented. All of them can either be found at the documentation of TwitchLib or down below.  
 Each placeholder needs to be surrounded with `%` and can be used everwhere in embeds.
 
-**User** specific placeholders are available under `%Channel.User%` or `%Clip.Creator%` (eg.: URL of the channel / user = `%Channel.User.Url%` / `%Clip.Creator.Url%`)  
+**User** specific placeholders are available under `%Channel.User%` or `%Clip.Creator%` (eg.: URL of the channel / user = `%Channel.Url%` / `%Clip.CreatorChannelUrl%`)  
 **Stream** specific placeholders are available under `%Stream%` (eg.: Title of the stream = `%Stream.Title%`)
 
 ***
