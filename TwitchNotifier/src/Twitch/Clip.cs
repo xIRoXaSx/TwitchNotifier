@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Caching;
@@ -7,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Helix.Models.Clips.GetClips;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchNotifier.src.config;
 using TwitchNotifier.src.Helper;
 using TwitchNotifier.src.Logging;
@@ -87,14 +89,14 @@ namespace TwitchNotifier.src.Twitch {
             };
             
             if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
-                var channel = await API.V5.Channels.GetChannelByIDAsync(clip.BroadcasterId);
-                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, channel.Name);
+                var users = await API.Helix.Users.GetUsersAsync(new List<string> {clip.BroadcasterId});
+                var clipUser = await API.Helix.Users.GetUsersAsync(new List<string> {clip.CreatorId});
+                var user = users.Users.Length > 0 ? users.Users[0] : null;
+                var clipper = clipUser.Users.Length > 0 ? clipUser.Users[0] : null;
+                var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, user?.DisplayName);
                 var placeholderHelper = new PlaceholderHelper() {
-                    Channel = new PlaceHolderChannelHelper() {
-                        Name = channel.Name,
-                        User = channel
-                    },
-                    Clip = new PlaceHolderClipHelper(clip, await API.V5.Channels.GetChannelByIDAsync(clip.CreatorId))
+                    Channel = new PlaceHolderChannelHelper(user, clip.BroadcasterName),
+                    Clip = new PlaceHolderClipHelper(clip, clipper)
                 };
 
                 LiveMonitoring.SendEmbed(placeholderHelper, channels);
