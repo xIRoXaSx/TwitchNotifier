@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
@@ -319,7 +320,11 @@ namespace TwitchNotifier.src.Twitch {
 
                 // eventNode is the node for all settings below each event
                 foreach (var eventNode in twitchEvent) {
-                    returnValue.Add((string)eventNode.Value[configProperty]);
+                    try {
+                        returnValue.Add((string)eventNode.Value[configProperty]);
+                    } catch (Exception ex) {
+                        Log.Error("Event node seems faulty! " + ex.Message);
+                    }
                 }
             }
 
@@ -432,14 +437,13 @@ namespace TwitchNotifier.src.Twitch {
 
                     if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
                         var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                        var users = await API.Helix.Users.GetUsersAsync(new List<string> {e.Stream.UserId});
+                        var user = users.Users.Length > 0 ? users.Users[0] : null;
                         var placeholderHelper = new PlaceholderHelper() {
                             Stream = e.Stream,
-                            Channel = new PlaceHolderChannelHelper() {
-                                Name = e.Channel,
-                                User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
-                            }
+                            Channel = new PlaceHolderChannelHelper(user, e.Channel)
                         };
-
+                        
                         SendEmbed(placeholderHelper, channels);
                     } else {
                         var cachedChannelEntry = (CacheEntry)MemoryCache.Default.Get(Cache.HashString(e.Stream.UserId));
@@ -485,12 +489,12 @@ namespace TwitchNotifier.src.Twitch {
 
                 if (!Cache.CheckCacheEntryExpiration(cacheEntry)) {
                     var channels = Config.GetEventObjectsByTwitchChannelName(configEventName, e.Channel);
+                    var users = await API.Helix.Users.GetUsersAsync(new List<string> {e.Stream.UserId});
+                    var user = users.Users.Length > 0 ? users.Users[0] : null;
+                    
                     var placeholderHelper = new PlaceholderHelper() {
                         Stream = e.Stream,
-                        Channel = new PlaceHolderChannelHelper() {
-                            Name = e.Channel,
-                            User = await API.V5.Channels.GetChannelByIDAsync(e.Stream.UserId)
-                        }
+                        Channel = new PlaceHolderChannelHelper(user, e.Channel)
                     };
 
                     SendEmbed(placeholderHelper, channels);
