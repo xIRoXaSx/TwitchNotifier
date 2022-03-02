@@ -8,8 +8,8 @@
     <Company />
     <Description>Send notifications to Discord via WebHook based on events</Description>
     <PackageIcon>TwitchGlitchPurple.png</PackageIcon>
-    <AssemblyVersion>1.0.0.1</AssemblyVersion>
-    <FileVersion>1.0.0.1</FileVersion>
+    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <FileVersion>1.3.0.0</FileVersion>
     <ApplicationIcon>TwitchNotifier.ico</ApplicationIcon>
     <AssemblyName>TwitchNotifier</AssemblyName>
   </PropertyGroup>
