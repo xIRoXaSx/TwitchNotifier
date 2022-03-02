@@ -6,7 +6,7 @@ namespace TwitchNotifier.src.config {
     /// </summary>
     public class Embed {
         public string Title { get; set; } = "%Channel.Name% went online!";
-        public string Url { get; set; } = "%Channel.User.Url%";
+        public string Url { get; set; } = "%Channel.Url%";
         public string Description { get; set; } = "What are you waiting for?!\\nGo check it out now!";
         public string Color { get; set; } = "#5555FF";
         public bool Timestamp { get; set; } = true;
