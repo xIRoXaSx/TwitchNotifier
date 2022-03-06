@@ -77,6 +77,14 @@ namespace TwitchNotifier {
             GeneralSettings = config.GeneralSettings;
             NotificationSettings = config.NotificationSettings;
         }
+
+        internal IEnumerable<string> GetMonitoredChannels() {
+            var returnValue = new List<string>();
+            for (var i = 0; i < NotificationSettings.NotificationEvent.Count; i++) {
+                returnValue.AddRange(NotificationSettings.NotificationEvent[0].Channels);
+            }
+            return returnValue;
+        }
     }
 
     /// <summary>
@@ -112,6 +120,11 @@ namespace TwitchNotifier {
         /// </summary>
         public int LiveNotificationThresholdInSeconds { get; set; } = 120;
 
+        /// <summary>
+        /// The interval to check the online and offline status of channels.
+        /// </summary>
+        public int LiveCheckIntervalInSeconds { get; set; } = 5; 
+        
         /// <summary>
         /// The client Id for the Twitch API.
         /// </summary>

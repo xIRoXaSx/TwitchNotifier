@@ -1,5 +1,5 @@
 ﻿namespace TwitchNotifier.twitch {
-    public class ClipMonitor {
+    internal class ClipMonitor {
         
     }
 }
