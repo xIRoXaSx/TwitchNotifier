@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
 namespace TwitchNotifier.models  {
-    internal class Embed {
+    public class Embed {
         public string Username { get; set; } = "%Channel.Name%";
         public string AvatarUrl { get; set; } = "%Channel.User.ProfileImageUrl%";
         public string Content { get; set; } = "Content above the embed (max 2048 characters)";
@@ -31,21 +31,21 @@ namespace TwitchNotifier.models  {
     /// <summary>
     /// Representing the thumbnail of the embed.
     /// </summary>
-    internal class EmbedThumbnail {
+    public class EmbedThumbnail {
         public string Url = "%Channel.User.ProfileImageUrl%";
     }
 
     /// <summary>
     /// Representing the image of the embed.
     /// </summary>
-    internal class EmbedImage {
+    public class EmbedImage {
         public string Url = "%Stream.ThumbnailUrl%";
     }
 
     /// <summary>
     /// Represents the author of an embed.
     /// </summary>
-    internal class EmbedAuthor {
+    public class EmbedAuthor {
         public string Name { get; set; } = "Stream Announcer 📢";
         public string IconUrl { get; set; } = "%Channel.User.ProfileImageUrl%";
         public string Url { get; set; } = "%Channel.Url%";
@@ -54,13 +54,13 @@ namespace TwitchNotifier.models  {
     /// <summary>
     /// Representing a single field of an embed.
     /// </summary>
-    internal class EmbedField {
+    public class EmbedField {
         public string Name { get; set; } = "Name of the field (max 256 chars)";
         public string Value { get; set; } = "Value of the field (max 1024 chars)";
         public bool Inline { get; set; }
     }
 
-    internal class EmbedFooter {
+    public class EmbedFooter {
         public string Text { get; set; } = "The footer text (max 2048 chars)";
         public string IconUrl { get; set; } = "%Channel.User.ProfileImageUrl%";
     }

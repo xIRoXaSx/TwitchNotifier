@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 
 namespace TwitchNotifier.models {
-    internal class NotificationEvent {
-        internal string Condition { get; set; } = "";
-        internal List<string> Usernames { get; set; } = new() {"Channel1", "Channel2"};
-        internal Embed Embed { get; set; } = new();
-        internal string WebHookUrl { get; set; } = "The Discord Webhook URL";
+    public class NotificationEvent {
+        public string Condition { get; set; } = "";
+        public List<string> Usernames { get; set; } = new() {"Channel1", "Channel2"};
+        public Embed Embed { get; set; } = new();
+        public string WebHookUrl { get; set; } = "The Discord Webhook URL";
     }
 }
