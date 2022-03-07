@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using TwitchNotifier.twitch;
 
 namespace TwitchNotifier {
-     internal class Program {
+    internal class Program {
         internal static readonly string BinaryName = Assembly.GetExecutingAssembly().GetName().Name;
         internal static Config Conf { get; private set; }
         internal static Core TwitchCore { get; private set; }

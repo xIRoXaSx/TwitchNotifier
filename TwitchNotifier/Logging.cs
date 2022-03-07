@@ -28,6 +28,17 @@ internal class Logging {
         Console.WriteLine("INF: {0} - {1}", CurrentDateTime(), value);
         Console.ForegroundColor = initColor;
     }
+    
+    /// <summary>
+    /// Log errors.
+    /// </summary>
+    /// <param name="value"><c>String</c> - The value to log.</param>
+    internal static void Error(string value) {
+        var initColor = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("ERR: {0} - {1}", CurrentDateTime(), value);
+        Console.ForegroundColor = initColor;
+    }
 
     /// <summary>
     /// Get the current date and time as string.

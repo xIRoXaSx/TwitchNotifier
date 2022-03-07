@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Win32Resource></Win32Resource>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>xIRoXaSx</Authors>
     <Company />
     <Description>Send notifications to Discord via WebHook based on events</Description>
