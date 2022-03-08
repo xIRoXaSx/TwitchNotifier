@@ -82,6 +82,11 @@ namespace TwitchNotifier.twitch {
                 .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
             if (notification == null)
                 return;
+            notification.Embed.Validate();
+            if (notification.Embed == null) {
+                Logging.Error("Embed validation returned null!");
+                return;
+            }
             
             await new Request(Program.Conf.NotificationSettings.NotificationEvent[0].WebHookUrl, notification.Embed).SendAsync();
         }
