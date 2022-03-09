@@ -6,19 +6,22 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using TwitchNotifier.models;
+using TwitchNotifier.placeholders;
 
 namespace TwitchNotifier; 
 
 internal class Request {
     private string Url { get; }
     private Embed Embed { get; }
+    private TwitchPlaceholder Placeholder { get; }
 
     private readonly CancellationTokenSource _cancelSource;
     private static readonly string[] Fields = { "avatar_url", "username", "content" };
 
-    internal Request(string url, Embed embed) {
+    internal Request(string url, Embed embed, TwitchPlaceholder placeholder) {
         Url = url;
         Embed = embed;
+        Placeholder = placeholder;
         _cancelSource = new CancellationTokenSource(3000);
     }
 
@@ -36,10 +39,17 @@ internal class Request {
         Embed.Color = embedColor.ToString();
         
         var req = new HttpClient();
+        var jsonString = new Placeholder(GetEmbedJson(Embed), Placeholder).Replace();
         
+        // Replace strings which are not inside the actual embed.
+        // Testcases were somewhere in between 0 and 1ms for all 3 fields.
+        Embed.AvatarUrl = new Placeholder(Embed.AvatarUrl, Placeholder).Replace();
+        Embed.Username = new Placeholder(Embed.Username, Placeholder).Replace();
+        Embed.Content = new Placeholder(Embed.Content, Placeholder).Replace();
+
         // To keep it simple, use field names as is.
         // Since these fields should not change (in near future), assign them via DefaultInterpolatedStringHandler.
-        var json = $"{{\"avatar_url\": \"{Embed.AvatarUrl}\",\"username\": \"{Embed.Username}\",\"content\": \"{Embed.Content}\",\"embeds\": [{GetEmbedJson(Embed)}]}}";
+        var json = $"{{\"avatar_url\": \"{Embed.AvatarUrl}\",\"username\": \"{Embed.Username}\",\"content\": \"{Embed.Content}\",\"embeds\": [{jsonString}]}}";
         try {
             var resp = await req.PostAsync(
                 Url,

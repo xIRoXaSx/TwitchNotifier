@@ -1,11 +1,15 @@
 ﻿using System.Linq;
+using Newtonsoft.Json;
 using TwitchLib.Api.Helix.Models.Clips.GetClips;
 using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace TwitchNotifier.placeholders; 
 
 internal class ClipPlaceholder {
+    [JsonProperty]
     internal readonly User Creator;
+    
+    [JsonProperty]
     internal readonly string CreatorChannelUrl = Placeholder.TwitchBaseUrl;
 
     internal ClipPlaceholder(Clip clip, User creator) {

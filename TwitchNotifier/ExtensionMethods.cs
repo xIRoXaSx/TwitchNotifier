@@ -1,10 +1,34 @@
 ﻿using System;
 using System.Linq;
+using System.Text;
 using TwitchNotifier.models;
 
 namespace TwitchNotifier; 
 
 public static class ExtensionMethods {
+    /// <summary>
+    /// <b>! Needs to be benchmarked against ToSnakeCase !</b>
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    internal static string ToForSnakeCase(this string value) {
+        var sb = new StringBuilder(value.Length);
+        for (var i = 0; i < value.Length; i++) {
+            var c = value[i];
+            sb.Append(i > 0 && char.IsUpper(c) && value[i-1] != '.' ? "_" + c : c);
+        }
+        return sb.ToString().ToLower();
+    }
+    
+    /// <summary>
+    /// Get the string formatted via snake case.
+    /// <param name="value"><c>String</c> - The value to format.</param>
+    /// <returns><c>String</c> - The formatted value.</returns>
+    /// </summary>    
+    internal static string ToSnakeCase(this string value) {
+        return string.Concat(value.Select((x, i) => i > 0 && char.IsUpper(x) && value[i - 1] != '.' ? "_" + x : x.ToString())).ToLower();
+    }
+    
     /// <summary>
     /// Try to parse a boolean from string.
     /// If parsing is not possible, use fallback value instead.

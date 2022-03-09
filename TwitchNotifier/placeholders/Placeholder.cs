@@ -1,4 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace TwitchNotifier.placeholders; 
@@ -7,11 +11,13 @@ public class Placeholder {
     internal const string TwitchBaseUrl = "https://www.twitch.tv/";
     private const char PlaceholderEnclosure = '%';
     private readonly string _source;
-    private readonly TwitchPlaceholder _placeholder;
+    
+    [JsonProperty]
+    private readonly TwitchPlaceholder _placeholderObj;
 
-    internal Placeholder(string value, TwitchPlaceholder placeholder) {
+    internal Placeholder(string value, TwitchPlaceholder placeholderObj) {
         _source = value;
-        _placeholder = placeholder;
+        _placeholderObj = placeholderObj;
     }
     
     /// <summary>
@@ -30,7 +36,39 @@ public class Placeholder {
             }
         };
 
-        // Keep the compiler happy until finished :)
-        return "";
+        // Convert placeholder object to a json string and match it via regular expression.
+        var serialized = JsonConvert.SerializeObject(_placeholderObj, serializerSettings);
+        var jObj = JObject.Parse(serialized);
+        var matches = Regex.Matches(_source, $"{PlaceholderEnclosure}(.*?){PlaceholderEnclosure}", RegexOptions.IgnoreCase);
+        var returnValue = _source;
+        List<string> matched = new();
+        
+        for (var i = 0; i < matches.Count; i++) {
+            var match = matches[i];
+            if (matched.Contains(matches[i].Value.ToLower()))
+                continue;
+            
+            matched.Add(match.Value.ToLower());
+            var tokenValue = match.Groups[1].Value;
+            var token = jObj.SelectToken(tokenValue.ToLower(), false) ?? 
+                        jObj.SelectToken(tokenValue.ToSnakeCase(), false);
+            
+            // No corresponding token found.
+            // Replace the placeholder with an empty string.
+            if (token == null) {
+                returnValue = returnValue.Replace(match.Groups[0].Value, "");
+                continue;
+            }
+            
+            // If token value is equal to the stream thumbnail url, replace the width and height placeholders from the API.
+            tokenValue = tokenValue.ToLower() != "stream.thumbnailurl"
+                ? token.ToString()
+                : token.ToString().Replace("{width}", "1280").Replace("{height}", "720") +
+                  $"?guid={Guid.NewGuid().ToString()}";
+            returnValue = returnValue.Replace(match.Groups[0].Value, tokenValue);
+        }
+        
+        // Use zero width space for the Discord embed line break translation.
+        return returnValue.Replace(@"\\n", "\u200B");
     }
 }

@@ -1,10 +1,13 @@
 ﻿# nullable enable
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
+using TwitchNotifier.placeholders;
 
 namespace TwitchNotifier.twitch {
     internal class StreamMonitor {
@@ -78,6 +81,7 @@ namespace TwitchNotifier.twitch {
             Logging.Debug($"{e.Channel} is live!");
             
             // Get the first embed which contains the channel.
+            var start = DateTime.Now;
             var notification = Program.Conf.NotificationSettings.NotificationEvent
                 .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
             if (notification == null)
@@ -87,8 +91,19 @@ namespace TwitchNotifier.twitch {
                 Logging.Error("Embed validation returned null!");
                 return;
             }
-            
-            await new Request(Program.Conf.NotificationSettings.NotificationEvent[0].WebHookUrl, notification.Embed).SendAsync();
+
+            var users = await Program.TwitchCore.TwitchApi.Helix.Users
+                .GetUsersAsync(new List<string>{e.Stream.UserId});
+            var user = users.Users.Length > 0 ? users.Users[0] : null;
+
+            await new Request(
+                Program.Conf.NotificationSettings.NotificationEvent[0].WebHookUrl,
+                notification.Embed,
+                new TwitchPlaceholder() {
+                    Channel = new ChannelPlaceholder(user, e.Channel),
+                    Stream = e.Stream
+                }
+            ).SendAsync();
         }
         
         private static void OnStreamOffline(object? sender, OnStreamOfflineArgs e) {
