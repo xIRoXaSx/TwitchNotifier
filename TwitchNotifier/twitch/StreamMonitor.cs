@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
+using TwitchNotifier.models;
 using TwitchNotifier.placeholders;
 
 namespace TwitchNotifier.twitch {
@@ -78,12 +79,26 @@ namespace TwitchNotifier.twitch {
         }
 
         private static async void OnStreamOnline(object? sender, OnStreamOnlineArgs e) {
-            Logging.Debug($"{e.Channel} is live!");
+            Logging.Debug($"{e.Channel} went live!");
+            var entry = new CacheEntry {
+                Key = e.Stream.UserId,
+                ExpirationTime = DateTime.Now.AddSeconds(Program.Conf.GeneralSettings.LiveNotificationThresholdInSeconds)
+            }.HashKey();
             
+            // Check if the same channel had already pushed a notification.
+            if (!Cache.IsCacheEntryExpired(entry)) {
+                var eventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
+                Logging.Debug($"{eventName} triggered multiple times and is still in cooldown...");
+                return;
+            }
+            
+            Cache.AddEntry(entry);
+
             // Get the first embed which contains the channel.
-            var start = DateTime.Now;
             var notification = Program.Conf.NotificationSettings.NotificationEvent
                 .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
+            
+            // Check if notification is null or invalid.
             if (notification == null)
                 return;
             notification.Embed.Validate();
@@ -91,19 +106,17 @@ namespace TwitchNotifier.twitch {
                 Logging.Error("Embed validation returned null!");
                 return;
             }
-
-            var users = await Program.TwitchCore.TwitchApi.Helix.Users
-                .GetUsersAsync(new List<string>{e.Stream.UserId});
+            
+            // Get User object of streamer for placeholders.
+            var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(new List<string>{e.Stream.UserId});
             var user = users.Users.Length > 0 ? users.Users[0] : null;
+            var placeholder = new TwitchPlaceholder {
+                Channel = new ChannelPlaceholder(user, e.Channel),
+                Stream = e.Stream
+            };
 
-            await new Request(
-                Program.Conf.NotificationSettings.NotificationEvent[0].WebHookUrl,
-                notification.Embed,
-                new TwitchPlaceholder() {
-                    Channel = new ChannelPlaceholder(user, e.Channel),
-                    Stream = e.Stream
-                }
-            ).SendAsync();
+            var json = notification.Embed.ToJson(placeholder);
+            await new Request(notification.WebHookUrl, json).SendAsync();
         }
         
         private static void OnStreamOffline(object? sender, OnStreamOfflineArgs e) {

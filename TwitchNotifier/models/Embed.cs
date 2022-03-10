@@ -1,7 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace TwitchNotifier.models  {
     public class Embed {
+        private static readonly string[] StaticEmbedFields = { "avatar_url", "username", "content" };
         public string Username { get; set; } = "%Channel.Name%";
         public string AvatarUrl { get; set; } = "%Channel.User.ProfileImageUrl%";
         public string Content { get; set; } = "Content above the embed (max 2048 characters)";
@@ -26,6 +31,36 @@ namespace TwitchNotifier.models  {
             },
         };
         public EmbedFooter Footer { get; set; } = new();
+        
+        /// <summary>
+        /// Get the json string of the embed.
+        /// </summary>
+        /// <returns>Json formatted string of the embed.</returns>
+        public override string ToString() {
+            var jsonSerializerSettings = new JsonSerializerSettings() {
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new DefaultContractResolver {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                }
+            };
+
+            // Add the current time as timestamp if property is set.
+            // Remove the property otherwise.
+            const string timeProp = "timestamp";
+            var json = JsonConvert.SerializeObject(this, jsonSerializerSettings);
+            var parsedJson = JObject.Parse(json);
+            if (parsedJson.ContainsKey(timeProp) && (parsedJson.GetValue(timeProp)?.ToString().ParseToBoolean() ?? false)) {
+                parsedJson[timeProp] = DateTime.Now;
+            } else {
+                parsedJson.Remove(timeProp);
+            }
+        
+            // Remove unexpected fields for the request.
+            parsedJson.Remove(StaticEmbedFields[0]);
+            parsedJson.Remove(StaticEmbedFields[1]);
+            parsedJson.Remove(StaticEmbedFields[2]);
+            return parsedJson.ToString();
+        }
     }
 
     /// <summary>

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using TwitchNotifier.models;
+using TwitchNotifier.placeholders;
 
 namespace TwitchNotifier; 
 
@@ -52,6 +54,21 @@ public static class ExtensionMethods {
     }
     
     /// <summary>
+    /// Hash the given value.
+    /// </summary>
+    /// <param name="value">The string that should be hashed.</param>
+    /// <returns><c>string</c> - The hashed string.</returns>
+    internal static string Create256Sha(this string value) {
+        using var sha256 = SHA256.Create();
+        var chars = sha256.ComputeHash(Encoding.UTF8.GetBytes(value));
+        var stringBuilder = new StringBuilder();
+        foreach (var c in chars) {
+            stringBuilder.Append(c.ToString("x2"));
+        }
+        return stringBuilder.ToString();
+    }
+    
+    /// <summary>
     /// Validate an embed and return truncated if field limits have exceeded.<br/>
     /// If the embed exceeds the total max length, it returns <c>null</c>.<br/>
     /// <a href="https://discord.com/developers/docs/resources/channel#embed-limits">Official docs</a>
@@ -78,5 +95,34 @@ public static class ExtensionMethods {
             embed.Title.Length + embed.Footer.Text.Length + embed.Footer.Text.Length +
             string.Join("", embed.Fields.Select(x => x.Name)).Length +
             string.Join("", embed.Fields.Select(x => x.Value)).Length <= 6000 ? embed : null;
+    }
+    
+    /// <summary>
+    /// Convert the Embed into a json string. 
+    /// </summary>
+    /// <param name="embed"><c>Embed</c> - The Embed to serialize.</param>
+    /// <param name="placeholder"><c>TwitchPlaceholder</c> - The placeholder used for the serialization.</param>
+    /// <returns><c>String</c> - The serialized Embed</returns>
+    internal static string ToJson(this Embed embed, TwitchPlaceholder placeholder) {
+        // Convert Embed's color into an int.
+        int.TryParse(embed.Color.Replace("#", ""), System.Globalization.NumberStyles.HexNumber, null, out var embedColor);
+        embed.Color = embedColor.ToString();
+        
+        // Get the json string of the Discord embed.
+        var embedString = new Placeholder(embed.ToString(), placeholder).Replace();
+        
+        // Replace strings which are not inside the actual embed.
+        // Testcases were somewhere in between 0 and 1ms for all 3 fields.
+        embed.AvatarUrl = new Placeholder(embed.AvatarUrl, placeholder).Replace();
+        embed.Username = new Placeholder(embed.Username, placeholder).Replace();
+        embed.Content = new Placeholder(embed.Content, placeholder).Replace();
+
+        // To keep it simple, use field names as is.
+        // Since these fields should not change (in near future), assign them via DefaultInterpolatedStringHandler.
+        var json = $"{{\"avatar_url\": \"{embed.AvatarUrl}\"," + 
+                   $"\"username\": \"{embed.Username}\"," + 
+                   $"\"content\": \"{embed.Content}\"," + 
+                   $"\"embeds\": [{embedString}]}}";
+        return json;
     }
 }

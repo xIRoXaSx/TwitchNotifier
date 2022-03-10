@@ -72,7 +72,7 @@ namespace TwitchNotifier {
         /// Load the config into the current instance.
         /// </summary>
         internal void Load() {
-            var deserializer = new DeserializerBuilder().Build();
+            var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
             var config = deserializer.Deserialize<Config>(File.ReadAllText(FullPath, System.Text.Encoding.UTF8));
             GeneralSettings = config.GeneralSettings;
             NotificationSettings = config.NotificationSettings;
