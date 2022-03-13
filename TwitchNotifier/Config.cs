@@ -80,8 +80,8 @@ namespace TwitchNotifier {
 
         internal IEnumerable<string> GetMonitoredChannels() {
             var returnValue = new List<string>();
-            for (var i = 0; i < NotificationSettings.NotificationEvent.Count; i++) {
-                returnValue.AddRange(NotificationSettings.NotificationEvent[0].Channels);
+            for (var i = 0; i < NotificationSettings.OnLiveEvent.Count; i++) {
+                returnValue.AddRange(NotificationSettings.OnLiveEvent[0].Channels);
             }
             return returnValue;
         }
@@ -91,7 +91,8 @@ namespace TwitchNotifier {
     /// Settings for the notifications.
     /// </summary>
     public class NotificationSettings {
-        public List<NotificationEvent> NotificationEvent { get; set; } = new(){ new NotificationEvent() };
+        public List<NotificationEvent> OnLiveEvent { get; set; } = new(){ new NotificationEvent() };
+        public List<NotificationEvent> OnClipCreated { get; set; } = new(){ new NotificationEvent() };
     }
 
     /// <summary>

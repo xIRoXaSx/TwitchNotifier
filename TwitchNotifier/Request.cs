@@ -2,11 +2,6 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using TwitchNotifier.models;
-
 namespace TwitchNotifier; 
 
 internal class Request {
@@ -14,7 +9,6 @@ internal class Request {
     private string Data { get; }
 
     private readonly CancellationTokenSource _cancelSource;
-    private static readonly string[] Fields = { "avatar_url", "username", "content" };
 
     internal Request(string url, string data) {
         Url = url;

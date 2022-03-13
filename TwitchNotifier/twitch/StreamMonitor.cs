@@ -41,7 +41,7 @@ namespace TwitchNotifier.twitch {
             
             // Set channels of interest.
             _monitorService.SetChannelsByName(
-                Program.Conf.GetMonitoredChannels().Distinct(System.StringComparer.CurrentCultureIgnoreCase).ToList()
+                Program.Conf.GetMonitoredChannels().Distinct(StringComparer.CurrentCultureIgnoreCase).ToList()
             );
             
             // Start the monitor.
@@ -95,7 +95,7 @@ namespace TwitchNotifier.twitch {
             Cache.AddEntry(entry);
 
             // Get the first embed which contains the channel.
-            var notification = Program.Conf.NotificationSettings.NotificationEvent
+            var notification = Program.Conf.NotificationSettings.OnLiveEvent
                 .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
             
             // Check if notification is null or invalid.
