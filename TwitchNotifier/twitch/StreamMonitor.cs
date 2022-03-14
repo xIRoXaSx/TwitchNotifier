@@ -39,10 +39,14 @@ namespace TwitchNotifier.twitch {
             if (_monitorService == null)
                 return;
             
+            var channelList = Program.Conf.GetMonitoredChannels().Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+            if (channelList.Count < 1) {
+                Logging.Info("No channels set to monitor live / offline activities.");
+                return;
+            }
+            
             // Set channels of interest.
-            _monitorService.SetChannelsByName(
-                Program.Conf.GetMonitoredChannels().Distinct(StringComparer.CurrentCultureIgnoreCase).ToList()
-            );
+            _monitorService.SetChannelsByName(channelList);
             
             // Start the monitor.
             _monitorService.Start();

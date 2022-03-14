@@ -31,7 +31,7 @@ internal class ClipMonitor {
 
                             var recent = await Program.TwitchCore.TwitchApi.Helix.Clips.GetClipsAsync(
                                 broadcasterId: channelId,
-                                startedAt: DateTime.Now.AddSeconds(-20),
+                                startedAt: DateTime.Now.AddSeconds(-_taskDelay-1),
                                 endedAt: DateTime.Now
                             );
 
@@ -54,14 +54,17 @@ internal class ClipMonitor {
                                 if (!Cache.IsCacheEntryExpired(entry))
                                     continue;
                                 
-                                Console.WriteLine("Found a new clip!");
+                                Logging.Debug($"Found a new clip @ channel {clip.BroadcasterName}");
                                 
                                 // Get the clip creator user.
-                                var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(new List<string>{clip.CreatorId});
-                                var user = users.Users.Length > 0 ? users.Users[0] : null;
+                                var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(
+                                    new List<string>{clip.BroadcasterId, clip.CreatorId}
+                                );
+                                var streamer = users.Users.Length > 0 ? users.Users[0] : null;
+                                var clipper = users.Users.Length > 1 ? users.Users[1] : null;
                                 var placeholder = new TwitchPlaceholder {
-                                    Channel = new ChannelPlaceholder(user, clip.BroadcasterName),
-                                    Clip = new ClipPlaceholder(clip, user)
+                                    Channel = new ChannelPlaceholder(streamer, clip.BroadcasterName),
+                                    Clip = new ClipPlaceholder(clip, clipper)
                                 };
 
                                 // Get the first embed which contains the channel.
@@ -70,11 +73,10 @@ internal class ClipMonitor {
                                 
                                 // Send clip embed and add it to the cache.
                                 var json = notification.Embed.ToJson(placeholder);
-                                await Task.Run(() => new Request(notification.WebHookUrl, json));
+                                await Task.Run(() => new Request(notification.WebHookUrl, json).SendAsync());
                                 Cache.AddEntry(entry);
                             }
                             
-                            Logging.Debug("Found new clip(s)");
                         } catch (Exception ex) {
                             Logging.Error($"ClipMonitor caught an exception: {ex.Message}");
                         }

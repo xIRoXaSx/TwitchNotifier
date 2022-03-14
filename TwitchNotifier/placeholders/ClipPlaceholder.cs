@@ -5,7 +5,7 @@ using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace TwitchNotifier.placeholders; 
 
-internal class ClipPlaceholder {
+internal class ClipPlaceholder : Clip {
     [JsonProperty]
     internal readonly User Creator;
     
@@ -17,7 +17,7 @@ internal class ClipPlaceholder {
         CreatorChannelUrl += clip.CreatorName;
         
         // To let users be able to use placeholders from inside the clip object
-        // without using the same term twice (clip.clip.x), set fields dynamically inside this class.
+        // without using the same term twice (clip.clip.x), set fields dynamically inside this instance.
         var props = clip.GetType().GetProperties().Where(x => x.CanRead && x.CanWrite);
         var context = this;
         foreach (var prop in props) {
