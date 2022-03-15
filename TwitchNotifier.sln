@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.31229.75
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwitchNotifier", "TwitchNotifier\TwitchNotifier.csproj", "{E1BE9AE6-1DF7-40A2-AB2C-C1CDC84D3C88}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{FF568806-1A19-48A8-855A-54044F924AF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{E1BE9AE6-1DF7-40A2-AB2C-C1CDC84D3C88}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1BE9AE6-1DF7-40A2-AB2C-C1CDC84D3C88}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1BE9AE6-1DF7-40A2-AB2C-C1CDC84D3C88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF568806-1A19-48A8-855A-54044F924AF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF568806-1A19-48A8-855A-54044F924AF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF568806-1A19-48A8-855A-54044F924AF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF568806-1A19-48A8-855A-54044F924AF1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
