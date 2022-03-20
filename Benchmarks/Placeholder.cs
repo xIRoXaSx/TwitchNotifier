@@ -4,27 +4,53 @@ namespace Benchmarks;
 
 [MemoryDiagnoser]
 public class Placeholder {
-    private const string Value = "(This is (a simple string (with some '('))";
+    // [Benchmark]
+    public void PlaceholderLinqWhereCount() => LinqWhereCount();
+    
+    // [Benchmark]
+    public void PlaceholderLinqCount() => LinqCount();
+
+    // [Benchmark]
+    public void PlaceholderForEachSeparateLoopIf() => ForEachSeparateLoopIf();
+    
+    // [Benchmark]
+    public void PlaceholderForSameLoopIf() => ForSameLoopIf(); 
+    
+    // [Benchmark]
+    public void PlaceholderForSameLoopIfVar() => ForSameLoopIfVar();
+    
+    // [Benchmark]
+    public void PlaceholderForEachSameLoopIf() => ForEachSameLoopIf();
+    
+    // [Benchmark]
+    public void PlaceholderForEachSameLoopSwitch() => ForEachSameLoopSwitch();
+
+    // [Benchmark]
+    public void PlaceholderLinqSkipAndTake() => LinqSkipAndTake();
+
+    // [Benchmark]
+    public void PlaceholderSubstring() => Substring();
+    
     private void LinqWhereCount() {
-        var oCount = Value.Where(x => x == '(').Count();
-        var cCount = Value.Where(x => x == ')').Count();
+        var oCount = Program.Value.Where(x => x == '(').Count();
+        var cCount = Program.Value.Where(x => x == ')').Count();
     }
 
     private void LinqCount() {
-        var oCount = Value.Count(x => x == '(');
-        var cCount = Value.Count(x => x == ')');
+        var oCount = Program.Value.Count(x => x == '(');
+        var cCount = Program.Value.Count(x => x == ')');
     }
 
     private void ForEachSeparateLoopIf() {
         var oCount = 0;
         var cCount = 0;
 
-        foreach (var c in Value) {
+        foreach (var c in Program.Value) {
             if (c == '(')
                 oCount++;
         }
         
-        foreach (var c in Value) {
+        foreach (var c in Program.Value) {
             if (c == ')')
                 cCount++;
         }
@@ -34,10 +60,10 @@ public class Placeholder {
         var oCount = 0;
         var cCount = 0;
 
-        for (var i = 0; i < Value.Length; i++) {
-            if (Value[i] == '(')
+        for (var i = 0; i < Program.Value.Length; i++) {
+            if (Program.Value[i] == '(')
                 oCount++;
-            if (Value[i] == ')')
+            if (Program.Value[i] == ')')
                 cCount++;
         }
     }
@@ -46,8 +72,8 @@ public class Placeholder {
         var oCount = 0;
         var cCount = 0;
 
-        for (var i = 0; i < Value.Length; i++) {
-            var val = Value[i];
+        for (var i = 0; i < Program.Value.Length; i++) {
+            var val = Program.Value[i];
             if (val == '(')
                 oCount++;
             if (val == ')')
@@ -59,7 +85,7 @@ public class Placeholder {
         var oCount = 0;
         var cCount = 0;
 
-        foreach (var c in Value) {
+        foreach (var c in Program.Value) {
             if (c == '(')
                 oCount++;
             if (c == ')')
@@ -71,7 +97,7 @@ public class Placeholder {
         var oCount = 0;
         var cCount = 0;
 
-        foreach (var c in Value) {
+        foreach (var c in Program.Value) {
             switch (c) {
                 case '(':
                     oCount++;
@@ -83,24 +109,11 @@ public class Placeholder {
         }
     }
 
-    [Benchmark]
-    public void BenchLinqWhereCount() => LinqWhereCount();
+    private void LinqSkipAndTake() {
+        string.Join("", Program.Value.Skip(37).Take(3));
+    }
     
-    [Benchmark]
-    public void BenchLinqCount() => LinqCount();
-
-    [Benchmark]
-    public void BenchForEachSeparateLoopIf() => ForEachSeparateLoopIf();
-    
-    [Benchmark]
-    public void BenchForSameLoopIf() => ForSameLoopIf(); 
-    
-    [Benchmark]
-    public void BenchForSameLoopIfVar() => ForSameLoopIfVar();
-    
-    [Benchmark]
-    public void BenchForEachSameLoopIf() => ForEachSameLoopIf();
-    
-    [Benchmark]
-    public void BenchForEachSameLoopSwitch() => ForEachSameLoopSwitch();
+    private void Substring() {
+        Program.Value.Substring(37, 3);
+    }
 }

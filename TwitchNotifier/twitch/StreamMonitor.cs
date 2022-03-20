@@ -105,7 +105,7 @@ namespace TwitchNotifier.twitch {
             // Check if notification is null or invalid.
             if (notification == null)
                 return;
-            notification.Embed.Validate();
+            notification.Embed = notification.Embed.Validate();
             if (notification.Embed == null) {
                 Logging.Error("Embed validation returned null!");
                 return;

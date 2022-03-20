@@ -13,8 +13,8 @@ internal class ClipMonitor {
     private bool notificationsActive = true;
     private readonly IEnumerable<string> _channelIds;
     private readonly List<Task> _clipListenerTasks = new();
-    private readonly int _taskDelay = 10;
-        
+    private const int TaskDelay = 10;
+
     public ClipMonitor(IEnumerable<string> channelIds) {
         _channelIds = channelIds;
     }
@@ -31,12 +31,12 @@ internal class ClipMonitor {
 
                             var recent = await Program.TwitchCore.TwitchApi.Helix.Clips.GetClipsAsync(
                                 broadcasterId: channelId,
-                                startedAt: DateTime.Now.AddSeconds(-_taskDelay-1),
+                                startedAt: DateTime.Now.AddSeconds(-TaskDelay-1),
                                 endedAt: DateTime.Now
                             );
 
                             if (recent.Clips.Length < 1 || !notificationsActive) {
-                                await Task.Delay(_taskDelay * 1000, _cancelSource.Token);
+                                await Task.Delay(TaskDelay * 1000, _cancelSource.Token);
                                 continue;
                             }
 
@@ -81,7 +81,7 @@ internal class ClipMonitor {
                             Logging.Error($"ClipMonitor caught an exception: {ex.Message}");
                         }
                         
-                        await Task.Delay(_taskDelay * 1000, _cancelSource.Token);
+                        await Task.Delay(TaskDelay * 1000, _cancelSource.Token);
                     }
                 }, _cancelSource.Token);
             }, _cancelSource.Token));
