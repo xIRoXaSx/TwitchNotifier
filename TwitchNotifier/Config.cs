@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TwitchNotifier.models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -78,12 +79,21 @@ namespace TwitchNotifier {
             NotificationSettings = config.NotificationSettings;
         }
 
+        /// <summary>
+        /// Returns a distinct List of channels which should be monitored for live and offline events.
+        /// </summary>
+        /// <returns><c>List&lt;string&gt;</c> - List containing all channels to monitor.</returns>
         internal IEnumerable<string> GetMonitoredChannels() {
             var returnValue = new List<string>();
             for (var i = 0; i < NotificationSettings.OnLiveEvent.Count; i++) {
-                returnValue.AddRange(NotificationSettings.OnLiveEvent[0].Channels);
+                returnValue.AddRange(NotificationSettings.OnLiveEvent[i].Channels);
             }
-            return returnValue;
+            
+            for (var i = 0; i < NotificationSettings.OnOfflineEvent.Count; i++) {
+                returnValue.AddRange(NotificationSettings.OnOfflineEvent[i].Channels);
+            }
+            
+            return returnValue.Distinct(StringComparer.CurrentCultureIgnoreCase);
         }
     }
 
@@ -92,6 +102,7 @@ namespace TwitchNotifier {
     /// </summary>
     public class NotificationSettings {
         public List<NotificationEvent> OnLiveEvent { get; set; } = new(){ new NotificationEvent() };
+        public List<NotificationEvent> OnOfflineEvent { get; set; } = new(){ new NotificationEvent() };
         public List<NotificationEvent> OnClipCreated { get; set; } = new(){ new NotificationEvent() };
     }
 
