@@ -119,6 +119,12 @@ namespace TwitchNotifier.twitch {
                 Stream = e.Stream
             };
 
+            var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());
+            if (!cond.Evaluate()) {
+                Logging.Debug("Notification withheld, condition evaluation returned false");
+                return;
+            }
+            
             var json = notification.Embed.ToJson(placeholder);
             await new Request(notification.WebHookUrl, json).SendAsync();
         }
@@ -160,6 +166,12 @@ namespace TwitchNotifier.twitch {
                 Stream = e.Stream
             };
 
+            var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());
+            if (!cond.Evaluate()) {
+                Logging.Debug("Notification withheld, condition evaluation returned false");
+                return;
+            }
+            
             var json = notification.Embed.ToJson(placeholder);
             await new Request(notification.WebHookUrl, json).SendAsync();
         }

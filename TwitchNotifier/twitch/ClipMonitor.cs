@@ -71,6 +71,12 @@ internal class ClipMonitor {
                                 var notification = Program.Conf.NotificationSettings.OnClipCreated
                                     .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == clip.BroadcasterName.ToLower()));
                                 
+                                var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());
+                                if (!cond.Evaluate()) {
+                                    Logging.Debug("Notification withheld, condition evaluation returned false");
+                                    return;
+                                }
+                                
                                 // Send clip embed and add it to the cache.
                                 var json = notification.Embed.ToJson(placeholder);
                                 await Task.Run(() => new Request(notification.WebHookUrl, json).SendAsync());

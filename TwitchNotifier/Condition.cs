@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 namespace TwitchNotifier; 
 
 internal class Condition {
+    private string _condition; 
     private const string LogicAnd = "&&";
     private const string LogicOr = "||";
     private static readonly string[] LogicalOperator = {
@@ -19,20 +20,23 @@ internal class Condition {
         "false"      // False
     };
 
+    internal Condition(string value) {
+        _condition = value;
+    }
+
     /// <summary>
-    /// Evaluates a condition parsed via string.  
+    /// Evaluates a condition parsed via the constructor's string.  
     /// </summary>
-    /// <param name="value"><c>String</c> - The value to evaluate.</param>
     /// <returns>
     /// <c>True</c> - If condition was satisfied, is null or empty. 
     /// <c>False</c> - If condition was unsatisfied, or parentheses are unbalanced. 
     /// </returns>
-    internal static bool EvaluateEventCondition(string value) {
-        if (string.IsNullOrEmpty(value))
+    internal bool Evaluate() {
+        if (string.IsNullOrEmpty(_condition))
             return true;
         var opening = 0;
         var closing = 0;
-        foreach (var c in value) {
+        foreach (var c in _condition) {
             switch (c) {
                 case '(':
                     opening++;
@@ -49,7 +53,7 @@ internal class Condition {
         }
 
         // Split value by logical operators and replace all simple conditions with their corresponding values.
-        var replacedConditions = Regex.Split(value, @"&&|\|\|");
+        var replacedConditions = Regex.Split(_condition, @"&&|\|\|");
         foreach (var replaced in replacedConditions) {
             var matched = Regex.Match(replaced, @"[\s\(]*(.*?)(?:\)|$)");
             if (!matched.Success)
@@ -59,11 +63,12 @@ internal class Condition {
             // Append a closing parentheses if condition included the "contains()" clause.
             if (Regex.Match(replaced, @"\.contains\(.*\)", RegexOptions.IgnoreCase).Success)
                 matchedVal += ")";
-            var partEval = EvaluateCondition(matchedVal);
-            value = value.Replace(matchedVal, partEval.ToString());
+            var partEval = EvaluateSingleCondition(matchedVal);
+            _condition = _condition.Replace(matchedVal, partEval.ToString());
         }
 
-        var conditions = EvaluateParenthesesOrder(value);
+        // Abbreviate boolean strings.
+        var conditions = EvaluateParenthesesOrder(_condition);
         var remainder = conditions[^1];
         while (remainder.ToLower() != "true" && remainder.ToLower() != "false") {
             foreach (var cond in conditions) {
@@ -84,17 +89,15 @@ internal class Condition {
         return eval;
     }
 
-
-
     /// <summary>
-    /// Evaluates a simple condition.
+    /// Evaluates a single condition.
     /// </summary>
     /// <param name="value"><c>String</c> - The value to evaluate.</param>
     /// <returns>
     /// <c>True</c> - If the evaluation returned true.<br/>
     /// <c>False</c> - If the evaluation returned false.<br/>
     /// </returns>
-    private static bool EvaluateCondition(string value) {
+    private bool EvaluateSingleCondition(string value) {
         var returnValue = false;
         if (string.IsNullOrEmpty(value))
             return true;
@@ -154,7 +157,7 @@ internal class Condition {
     /// <c>True</c> - If the evaluation result returned true.<br/>
     /// <c>False</c> - If the evaluation result returned false.
     /// </returns>
-    private static bool EvaluateOperation(string value, string logicalOperator) {
+    private bool EvaluateOperation(string value, string logicalOperator) {
         var conditions = value.Split(logicalOperator, StringSplitOptions.TrimEntries);
         var eval = false;
         var parsed = new bool[conditions.Length];
@@ -162,7 +165,7 @@ internal class Condition {
             var cond = conditions[i];
             if (!IsLogicalOperator(cond))
                 return false;
-            parsed[i] = EvaluateCondition(cond);
+            parsed[i] = EvaluateSingleCondition(cond);
             // Set the initial eval value.
             if (i == 0)
                 eval = parsed[i];
@@ -186,7 +189,7 @@ internal class Condition {
     /// </summary>
     /// <param name="value">The string which contains the condition / parentheses</param>
     /// <returns></returns>
-    private static List<string> EvaluateParenthesesOrder(string value) {
+    private List<string> EvaluateParenthesesOrder(string value) {
         var returnValue = new List<string>();
         var brackets = new Stack<int>();
         var containsOpened = false;
@@ -227,7 +230,7 @@ internal class Condition {
     /// <c>True</c> - If value is either logical operator, boolean or known function.<br/>
     /// <c>False</c> - Otherwise.
     /// </returns>
-    private static bool IsLogicalOperator(string value) {
+    private bool IsLogicalOperator(string value) {
         for (var i = 0; i < LogicalOperator.Length; i++) {
             if (LogicalOperator[i] == value.ToLower())
                 return true;

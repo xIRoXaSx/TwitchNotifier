@@ -40,7 +40,7 @@ namespace TwitchNotifier {
             channels = channels.Distinct().ToList();
             var channelIds = await TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: channels);
             _clipMonitor = new ClipMonitor(channelIds.Users.Select(x => x.Id));
-            Logging.Info($"Starting clip monitor");
+            Logging.Info("Starting clip monitor");
             Logging.Debug($"\t> Channel(s) to monitor clips: {string.Join(", ", channels)}");
             _clipMonitor.Start();
 
