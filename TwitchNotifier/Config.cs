@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using TwitchNotifier.models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -74,7 +75,7 @@ namespace TwitchNotifier {
         /// </summary>
         internal void Load() {
             var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-            var config = deserializer.Deserialize<Config>(File.ReadAllText(FullPath, System.Text.Encoding.UTF8));
+            var config = deserializer.Deserialize<Config>(TryReadFile(FullPath));
             GeneralSettings = config.GeneralSettings;
             NotificationSettings = config.NotificationSettings;
         }
@@ -94,6 +95,63 @@ namespace TwitchNotifier {
             }
             
             return returnValue.Distinct(StringComparer.CurrentCultureIgnoreCase);
+        }
+
+        /// <summary>
+        /// Adds the filesystem watcher to monitor config changes.
+        /// </summary>
+        internal void SetFileWatcher() {
+            var fsWatcher = new FileSystemWatcher(DirPath, Name) {
+                EnableRaisingEvents = true,
+                NotifyFilter = NotifyFilters.LastWrite
+            };
+            
+            fsWatcher.Changed += FileSystemWatcherOnChanged;
+        }
+
+        /// <summary>
+        /// Gets invoked whenever the config file has been modified.
+        /// </summary>
+        /// <param name="sender"><c>Object</c> - The sender object.</param>
+        /// <param name="e"><c>FileSystemEventArgs</c> - The event args</param>
+        private void FileSystemWatcherOnChanged(object sender, FileSystemEventArgs e) {
+            // Check if any property for the Twitch API has been changed.
+            var entry = new CacheEntry {
+                Key = "TwitchNotifier_Config",
+                ExpirationTime = DateTime.Now.AddSeconds(1),
+                Sha256HashKey = false
+            };
+            
+            if (!Cache.IsCacheEntryExpired(entry))
+                return;
+            
+            Cache.AddEntry(entry);
+            Logging.Debug("Hot-loaded config");
+            var oldConf = Program.Conf.GeneralSettings;
+            var c = Program.Conf.NotificationSettings;
+            Program.Conf.Load();
+
+            if (Program.Conf.GeneralSettings.ClientId.Create256Sha() != oldConf.ClientId.Create256Sha() ||
+                Program.Conf.GeneralSettings.AccessToken.Create256Sha() != oldConf.AccessToken.Create256Sha()) {
+                Program.TwitchCore.Dispose();
+            }
+        }
+        
+        /// <summary>
+        /// Try to read a file from the given path.
+        /// </summary>
+        /// <param name="fullPath"><c>String</c> - The full path of the file to read.</param>
+        /// <returns><c>String</c> - Either content of the config file or empty.</returns>
+        private static string TryReadFile(string fullPath) {
+            var res = Array.Empty<byte>();
+            for (var numTries = 0; numTries < 10; numTries++) {
+                try {
+                    res = File.ReadAllBytes(fullPath);
+                } catch (IOException) {
+                    Thread.Sleep(50);
+                }
+            }
+            return res.Length == 0 ? "" : System.Text.Encoding.UTF8.GetString(res);
         }
     }
 

@@ -11,17 +11,26 @@ namespace TwitchNotifier.twitch;
 internal class ClipMonitor {
     private readonly CancellationTokenSource _cancelSource = new();
     private bool notificationsActive = true;
-    private readonly IEnumerable<string> _channelIds;
+    private IEnumerable<string> _channelIds;
     private readonly List<Task> _clipListenerTasks = new();
     private const int TaskDelay = 10;
 
-    public ClipMonitor(IEnumerable<string> channelIds) {
+    internal ClipMonitor(IEnumerable<string> channelIds = null) {
+        _channelIds = channelIds;
+    }
+    
+    internal void SetChannelIds(IEnumerable<string> channelIds) {
         _channelIds = channelIds;
     }
         
     internal async void Start() {
+        if (_channelIds == null) {
+            Logging.Error("Cannot start ClipMonitor, channels have not been set!");
+            return;
+        }
+        
         foreach (var channelId in _channelIds) {
-            _clipListenerTasks.Add(Task.Run(() => {
+            _clipListenerTasks.Add(
                 Task.Run(async () => {
                     // Loop until cancellation has been requested.
                     while (!_cancelSource.Token.IsCancellationRequested) {
@@ -84,15 +93,22 @@ internal class ClipMonitor {
                             }
                             
                         } catch (Exception ex) {
-                            Logging.Error($"ClipMonitor caught an exception: {ex.Message}");
+                            Logging.Error($"ClipMonitor: caught an exception: {ex.Message}");
                         }
-                        
                         await Task.Delay(TaskDelay * 1000, _cancelSource.Token);
                     }
-                }, _cancelSource.Token);
-            }, _cancelSource.Token));
+                }, _cancelSource.Token)
+            );
         }
-            
+
         await Task.WhenAll(_clipListenerTasks);
+    }
+
+    internal void Stop() {
+        _cancelSource.Cancel();
+        foreach (var clipListener in _clipListenerTasks) {
+            clipListener.Dispose();
+        }
+        _cancelSource.Dispose();
     }
 }

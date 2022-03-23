@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchLib.Api.Interfaces;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
@@ -23,6 +24,19 @@ namespace TwitchNotifier.twitch {
             _cancelSource = new CancellationTokenSource();
             _monitorService = new LiveStreamMonitorService(
                 core.TwitchApi, Program.Conf.GeneralSettings.LiveCheckIntervalInSeconds
+            );
+
+            _monitorService.OnServiceStarted += OnServiceStated;
+            _monitorService.OnServiceStopped += OnServiceStopped;
+            _monitorService.OnChannelsSet += OnChannelsSet;
+            _monitorService.OnStreamOnline += OnStreamOnline;
+            _monitorService.OnStreamOffline += OnStreamOffline;
+        }
+        
+        internal StreamMonitor(ITwitchAPI twitchApi) {
+            _cancelSource = new CancellationTokenSource();
+            _monitorService = new LiveStreamMonitorService(
+                twitchApi, Program.Conf.GeneralSettings.LiveCheckIntervalInSeconds
             );
 
             _monitorService.OnServiceStarted += OnServiceStated;
@@ -54,8 +68,10 @@ namespace TwitchNotifier.twitch {
             // Keep alive.
             try {
                 await Task.Delay(-1, _cancelSource.Token);
-            } catch (TaskCanceledException ex) {
-                Logging.Debug($"StreamMonitor: {ex.Message}");
+            } catch (TaskCanceledException) {
+                // Ignore cancelled tasks.
+            } catch (Exception ex) {
+                Logging.Debug($"StreamMonitor caught an exception: {ex.Message}");
             }
         }
 
