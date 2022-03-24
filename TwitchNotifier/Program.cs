@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -9,7 +10,7 @@ namespace TwitchNotifier {
     internal class Program {
         internal static readonly string BinaryName = Assembly.GetExecutingAssembly().GetName().Name;
         internal static Config Conf { get; }
-        internal static Core TwitchCore { get; set; }
+        internal static Core TwitchCore { get; private set; }
         private CancellationTokenSource _cancelSource = new();
         private bool _disposeSubscribed;
 
@@ -29,10 +30,11 @@ namespace TwitchNotifier {
             // Create a new TwitchCore instance and validate the data for it.
             TwitchCore = new Core();
             await TwitchCore.ValidateOrThrowAsync();
-            if (!_disposeSubscribed) {
-                TwitchCore.DisposeRequested += (_, _) => TwitchCoreOnDisposeRequested();
-                _disposeSubscribed = true;
+            void RunDispose(object sender, EventArgs args) {
+                TwitchCoreOnDisposeRequested();
             }
+            
+            TwitchCore.DisposeRequested += RunDispose;
             
             // Start the stream monitor.
             TwitchCore.StreamMonitor.Start();
@@ -54,9 +56,12 @@ namespace TwitchNotifier {
             Logging.Info("Setup finished.");
             try {
                 await Task.Delay(-1, _cancelSource.Token);
-            } catch (TaskCanceledException) {}
+            } catch (TaskCanceledException) {
+                // Ignore cancelled tasks.
+            }
             _cancelSource.Dispose();
             _cancelSource = new CancellationTokenSource();
+            TwitchCore.DisposeRequested -= RunDispose;
             await MainAsync();
         }
 

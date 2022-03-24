@@ -57,6 +57,8 @@ namespace TwitchNotifier.twitch {
             } catch (Exception ex) {
                 Logging.Debug($"StreamMonitor caught an exception: {ex.Message}");
             }
+            
+            _cancelSource.Dispose();
         }
 
         /// <summary>
@@ -67,7 +69,6 @@ namespace TwitchNotifier.twitch {
             _cancelSource.Cancel();
             if (_monitorService?.Enabled ?? false)
                 _monitorService?.Stop();
-            _cancelSource.Dispose();
         }
         
         private static void OnServiceStated(object? sender, OnServiceStartedArgs e) {
