@@ -29,17 +29,5 @@ namespace TwitchNotifier {
             var cacheValue = (CacheEntry)MemoryCache.Default[entry.Key];
             return cacheValue == null;
         }
-        
-        /// <summary>
-        /// Hash the key of an CacheEntry.
-        /// </summary>
-        /// <param name="entry">The CacheEntry for which the key should be hashed.</param>
-        /// <returns><c>CacheEntry</c> - The CacheEntry.</returns>
-        internal static CacheEntry HashCacheEntryKey(CacheEntry entry) {
-            if (!entry.Sha256HashKey)
-                return entry;
-            entry.Key = entry.Key.Create256Sha();
-            return entry;
-        }
     }
 }

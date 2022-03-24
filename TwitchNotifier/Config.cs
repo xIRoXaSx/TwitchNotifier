@@ -16,6 +16,7 @@ namespace TwitchNotifier {
         /// The name of the config file.
         /// </summary>
         private const string Name = "config.yml";
+        private FileSystemWatcher _fsWatcher;
 
         /// <summary>
         /// The path to the binary's config directory.
@@ -37,7 +38,7 @@ namespace TwitchNotifier {
         /// <summary>
         /// Settings for the binary itself.
         /// </summary>
-        public GeneralSettings GeneralSettings { get; private set; } = new();
+        public GeneralSettings GeneralSettings { get; set; } = new();
 
         /// <summary>
         /// Create the configuration directory and file if they do not already exist.
@@ -101,12 +102,12 @@ namespace TwitchNotifier {
         /// Adds the filesystem watcher to monitor config changes.
         /// </summary>
         internal void SetFileWatcher() {
-            var fsWatcher = new FileSystemWatcher(DirPath, Name) {
+            _fsWatcher = new FileSystemWatcher(DirPath, Name) {
                 EnableRaisingEvents = true,
                 NotifyFilter = NotifyFilters.LastWrite
             };
             
-            fsWatcher.Changed += FileSystemWatcherOnChanged;
+            _fsWatcher.Changed += FileSystemWatcherOnChanged;
         }
 
         /// <summary>
@@ -128,7 +129,6 @@ namespace TwitchNotifier {
             Cache.AddEntry(entry);
             Logging.Debug("Hot-loaded config");
             var oldConf = Program.Conf.GeneralSettings;
-            var c = Program.Conf.NotificationSettings;
             Program.Conf.Load();
 
             if (Program.Conf.GeneralSettings.ClientId.Create256Sha() != oldConf.ClientId.Create256Sha() ||

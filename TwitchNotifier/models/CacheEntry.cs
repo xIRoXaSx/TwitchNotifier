@@ -9,24 +9,19 @@ namespace TwitchNotifier.models {
         internal string Key { get; set; }
 
         /// <summary>
-        /// The value of the CacheEntry.
-        /// </summary>
-        internal object Value { get; set; }
-
-        /// <summary>
         /// Determines whether the CacheEntry key should be hashed or not
         /// </summary>
-        internal bool Sha256HashKey { get; set; } = true;
+        internal bool Sha256HashKey { get; init; } = true;
 
         /// <summary>
         /// The DateTime when the CacheEntry should be counted as expired.
         /// </summary>
-        internal DateTime ExpirationTime { get; set; } = DateTime.Now.AddSeconds(30);
+        internal DateTime ExpirationTime { get; init; } = DateTime.Now.AddSeconds(30);
 
         /// <summary>
         /// The CacheItemPriority which indicates whether an item should be stored indefinitely or not.
         /// </summary>
-        internal CacheItemPriority Priority { get; set; } = CacheItemPriority.Default;
+        internal CacheItemPriority Priority { get; } = CacheItemPriority.Default;
 
         /// <summary>
         /// Hash the key of an CacheEntry.

@@ -14,25 +14,8 @@ using TwitchNotifier.placeholders;
 namespace TwitchNotifier.twitch {
     internal class StreamMonitor {
         private readonly LiveStreamMonitorService? _monitorService;
-        private readonly CancellationTokenSource _cancelSource = new();
-        
-        internal StreamMonitor() {
-            var core = Program.TwitchCore;
-            if (!core.IsValid)
-                return;
-            
-            _cancelSource = new CancellationTokenSource();
-            _monitorService = new LiveStreamMonitorService(
-                core.TwitchApi, Program.Conf.GeneralSettings.LiveCheckIntervalInSeconds
-            );
+        private readonly CancellationTokenSource _cancelSource;
 
-            _monitorService.OnServiceStarted += OnServiceStated;
-            _monitorService.OnServiceStopped += OnServiceStopped;
-            _monitorService.OnChannelsSet += OnChannelsSet;
-            _monitorService.OnStreamOnline += OnStreamOnline;
-            _monitorService.OnStreamOffline += OnStreamOffline;
-        }
-        
         internal StreamMonitor(ITwitchAPI twitchApi) {
             _cancelSource = new CancellationTokenSource();
             _monitorService = new LiveStreamMonitorService(
@@ -61,6 +44,7 @@ namespace TwitchNotifier.twitch {
             
             // Set channels of interest.
             _monitorService.SetChannelsByName(channelList);
+            await _monitorService.UpdateLiveStreamersAsync(!Program.Conf.GeneralSettings.SkipNotificationsOnStartup);
             
             // Start the monitor.
             _monitorService.Start();
@@ -79,6 +63,7 @@ namespace TwitchNotifier.twitch {
         /// Stop the monitoring service.
         /// </summary>
         internal void Stop() {
+            _monitorService?.ClearCache();
             _cancelSource.Cancel();
             if (_monitorService?.Enabled ?? false)
                 _monitorService?.Stop();

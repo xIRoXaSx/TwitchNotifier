@@ -7,7 +7,6 @@ namespace TwitchNotifier;
 internal class Condition {
     private string _condition; 
     private const string LogicAnd = "&&";
-    private const string LogicOr = "||";
     private static readonly string[] LogicalOperator = {
         "==",        // Equals
         "!=",        // NotEquals
@@ -69,7 +68,7 @@ internal class Condition {
 
         // Abbreviate boolean strings.
         var conditions = EvaluateParenthesesOrder(_condition);
-        var remainder = conditions[^1];
+        var remainder = conditions.Count < 1 ? _condition : conditions[^1];
         while (remainder.ToLower() != "true" && remainder.ToLower() != "false") {
             foreach (var cond in conditions) {
                 // Replace encapsulated booleans.
