@@ -3,7 +3,7 @@
 namespace TwitchNotifier; 
 
 internal class Logging {
-    private static bool IsDebugEnabled = Program.Conf.GeneralSettings.Debug;
+    internal static bool IsDebugEnabled = Program.Conf.GeneralSettings.Debug;
 
     /// <summary>
     /// Log debug information.
