@@ -16,7 +16,7 @@ For a detailed configuration please check out the [Configuration](https://github
 <br/>
 
 ### 🔗 Placeholders
-To view all available placeholders please check out the [Placeholders](./placeholders) guide.
+To view all available placeholders please check out the [Placeholders](https://github.com/xIRoXaSx/TwitchNotifier/wiki/placeholders) guide.
 ***
 <br/>
 
@@ -39,8 +39,8 @@ To view all available placeholders please check out the [Placeholders](./placeho
 ✅ => Implemented  
 ⭕ => Currently being worked on
 
-To see which features are currently in the making, please head over to the [project boards](https://github.com/xIRoXaSx/TwitchNotifier/projects).
-Current implemented events can be viewed [here](./configuration#event-nodes)
+To see which features are currently in the making, please head over to the [project boards](https://github.com/xIRoXaSx/TwitchNotifier/projects).  
+Current implemented events can be viewed [here](https://github.com/xIRoXaSx/TwitchNotifier/wiki/configuration#event-nodes).
 ***
 <br/>
 
