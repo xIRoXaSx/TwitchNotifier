@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Win32Resource></Win32Resource>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>xIRoXaSx</Authors>
     <Company />
     <Description>Send notifications to Discord via WebHook based on events</Description>
@@ -12,10 +11,11 @@
     <FileVersion>1.3.0.0</FileVersion>
     <ApplicationIcon>TwitchNotifier.ico</ApplicationIcon>
     <AssemblyName>TwitchNotifier</AssemblyName>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
+    <PackageReference Include="System.Runtime.Caching" Version="6.0.0" />
     <PackageReference Include="TwitchLib.Api" Version="3.5.0" />
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
