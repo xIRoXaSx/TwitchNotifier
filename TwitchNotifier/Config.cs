@@ -78,6 +78,8 @@ internal class Config {
     internal void Load() {
         var deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
         var config = deserializer.Deserialize<Config>(TryReadFile(FullPath));
+        if (config == null)
+            return;
         GeneralSettings = config.GeneralSettings;
         NotificationSettings = config.NotificationSettings;
     }
@@ -96,6 +98,18 @@ internal class Config {
             returnValue.AddRange(NotificationSettings.OnOfflineEvent[i].Channels);
         }
             
+        return returnValue.Distinct(StringComparer.CurrentCultureIgnoreCase);
+    }
+
+    /// <summary>
+    /// Returns a distinct List of channels which should be monitored for follow events.
+    /// </summary>
+    /// <returns><c>List&lt;string&gt;</c> - List containing all channels to monitor.</returns>
+    internal IEnumerable<string> GetFollowMonitoredChannels() {
+        var returnValue = new List<string>();
+        for (var i = 0; i < NotificationSettings.OnFollowEvent.Count; i++) {
+            returnValue.AddRange(NotificationSettings.OnFollowEvent[i].Channels);
+        }
         return returnValue.Distinct(StringComparer.CurrentCultureIgnoreCase);
     }
 
@@ -119,7 +133,7 @@ internal class Config {
     private void FileSystemWatcherOnChanged(object sender, FileSystemEventArgs e) {
         // Check if any property for the Twitch API has been changed.
         var entry = new CacheEntry {
-            Key = "TwitchNotifier_Config",
+            Key = "TN_Config",
             ExpirationTime = DateTime.Now.AddSeconds(1),
             Sha256HashKey = false
         };
@@ -164,6 +178,7 @@ public class NotificationSettings {
     public List<NotificationEvent> OnLiveEvent { get; set; } = new(){ new NotificationEvent() };
     public List<NotificationEvent> OnOfflineEvent { get; set; } = new(){ new NotificationEvent() };
     public List<NotificationEvent> OnClipCreated { get; set; } = new(){ new NotificationEvent() };
+    public List<NotificationEvent> OnFollowEvent { get; set; } = new(){ new NotificationEvent() };
 }
 
 /// <summary>
@@ -195,7 +210,12 @@ public class GeneralSettings {
     /// <summary>
     /// The interval to check the online and offline status of channels.
     /// </summary>
-    public int LiveCheckIntervalInSeconds { get; set; } = 5; 
+    public int LiveCheckIntervalInSeconds { get; set; } = 5;
+    
+    /// <summary>
+    /// The interval to check for follower events.
+    /// </summary>
+    public int FollowerCheckIntervalInSeconds { get; set; } = 5; 
         
     /// <summary>
     /// The client Id for the Twitch API.

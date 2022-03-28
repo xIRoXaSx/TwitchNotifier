@@ -13,5 +13,8 @@ public class TwitchPlaceholder {
     [JsonProperty]
     internal ClipPlaceholder Clip { get; set; }
     
+    [JsonProperty]
+    internal FollowerPlaceholder Follower { get; set; }
+    
     internal TwitchPlaceholder() {}
 }

@@ -9,6 +9,7 @@ namespace TwitchNotifier.twitch {
         internal bool IsValid { get; private set; }
         internal TwitchAPI TwitchApi { get; }
         internal StreamMonitor StreamMonitor { get; }
+        internal FollowerMonitor FollowerMonitor { get; }
         internal ClipMonitor ClipMonitor { get; }
         internal event EventHandler? DisposeRequested;
 
@@ -24,6 +25,7 @@ namespace TwitchNotifier.twitch {
                 }
             };
 
+            FollowerMonitor = new FollowerMonitor(TwitchApi);
             StreamMonitor = new StreamMonitor(TwitchApi);
             ClipMonitor = new ClipMonitor();
         }
