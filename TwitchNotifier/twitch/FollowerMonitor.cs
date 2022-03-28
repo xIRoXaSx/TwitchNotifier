@@ -87,6 +87,8 @@ internal class FollowerMonitor {
     }
     
     private async void OnNewFollowersDetected(object? sender, OnNewFollowersDetectedArgs e) {
+        Logging.Debug($"{e.Channel} received a new follower!");
+        
         var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: new List<string>{e.Channel});
         var streamer = users.Users.Length > 0 ? users.Users[0] : null;
         if (streamer == null)
@@ -95,12 +97,12 @@ internal class FollowerMonitor {
         foreach (var follower in e.NewFollowers) {
             if (follower == null)
                 continue;
-            if (_followerService != null && _followerService.KnownFollowers.ContainsKey(streamer.Id) && 
+            if (_followerService != null && _followerService.KnownFollowers.ContainsKey(e.Channel) && 
                 _followerService.KnownFollowers[streamer.Id].Contains(follower))
                 continue;
             
             var entry = new CacheEntry {
-                Key = $"TN_F_{e.Channel}_{follower.ToUserName}",
+                Key = $"TN_F_{e.Channel}_{follower.FromUserName}",
                 ExpirationTime = DateTime.Now.AddSeconds(5)
             }.HashKey();
                 
@@ -110,8 +112,7 @@ internal class FollowerMonitor {
                 Logging.Debug($"{eventName} triggered while still in cooldown...");
                 return;
             }
-                
-            Logging.Debug($"{e.Channel} received a new follower!");
+
             Cache.AddEntry(entry);
 
             // Get the first embed which contains the channel.
@@ -132,7 +133,7 @@ internal class FollowerMonitor {
             var user = users.Users.Length > 0 ? users.Users[0] : null;
             var placeholder = new TwitchPlaceholder {
                 Channel = new ChannelPlaceholder(streamer, e.Channel),
-                Follower = new FollowerPlaceholder(user)
+                Follower = new FollowerPlaceholder(user, follower.FollowedAt)
             };
 
             var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());
