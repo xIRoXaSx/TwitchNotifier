@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TwitchLib.Api.Helix.Models.Users.GetUserFollows;
 using TwitchLib.Api.Interfaces;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
@@ -16,6 +17,7 @@ namespace TwitchNotifier.twitch;
 internal class FollowerMonitor {
     private readonly FollowerService? _followerService;
     private readonly CancellationTokenSource _cancelSource;
+    private readonly int _followerCacheExpiration = 3600;
     
     internal FollowerMonitor(ITwitchAPI twitchApi) {
         _cancelSource = new CancellationTokenSource();
@@ -87,26 +89,32 @@ internal class FollowerMonitor {
     }
     
     private async void OnNewFollowersDetected(object? sender, OnNewFollowersDetectedArgs e) {
-        Logging.Debug($"{e.Channel} received a new follower!");
-        
         var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: new List<string>{e.Channel});
         var streamer = users.Users.Length > 0 ? users.Users[0] : null;
         if (streamer == null)
             return;
+        var knownFollower = _followerService == null || !_followerService.KnownFollowers.ContainsKey(e.Channel)
+            ? new List<Follow>()
+            : _followerService.KnownFollowers[e.Channel];
+        if (knownFollower.Count < 1)
+            return;
         
+        Logging.Debug($"{e.Channel} got new follower(s)!");
         foreach (var follower in e.NewFollowers) {
             if (follower == null)
                 continue;
-            if (_followerService != null && _followerService.KnownFollowers.ContainsKey(e.Channel) && 
-                _followerService.KnownFollowers[streamer.Id].Contains(follower))
-                continue;
             
+            // Dual layer cache.
+            // First layer:  MemoryCache will hold item for the defined time in local memory.
+            //               If first layer does not hold the follower, check the KnownFollowers.
+            // Second layer: The follower service's KnownFollowers will hold the past view followers.
             var entry = new CacheEntry {
                 Key = $"TN_F_{e.Channel}_{follower.FromUserName}",
-                ExpirationTime = DateTime.Now.AddSeconds(5)
+                ExpirationTime = DateTime.Now.AddSeconds(_followerCacheExpiration)
             }.HashKey();
                 
-            // Check if the same channel had already pushed a notification.
+            // First layer cache.
+            // Check if the same user had already followed the current streamer.
             if (!Cache.IsCacheEntryExpired(entry)) {
                 var eventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
                 Logging.Debug($"{eventName} triggered while still in cooldown...");
@@ -114,7 +122,21 @@ internal class FollowerMonitor {
             }
 
             Cache.AddEntry(entry);
+            
+            // Second layer cache.
+            // Check if user has followed the channel before while the first layer cache wasn't aware of it.
+            Follow? known = null;
+            foreach (var f in knownFollower) {
+                if (f.FromUserName == follower.FromUserName)
+                    known = f;
+            }
 
+            // Since user is directly exposed to KnownFollowers after following,
+            // check the time stamp.
+            var check = Program.Conf.GeneralSettings.FollowerCheckIntervalInSeconds;
+            if (known != null && DateTime.Now.AddSeconds(-check - check/2).ToUniversalTime() > known.FollowedAt.ToUniversalTime())
+                continue;
+            
             // Get the first embed which contains the channel.
             var notification = Program.Conf.NotificationSettings.OnFollowEvent
                 .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
