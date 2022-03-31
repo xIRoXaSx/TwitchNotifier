@@ -17,8 +17,7 @@ namespace TwitchNotifier.twitch;
 internal class FollowerMonitor {
     private readonly FollowerService? _followerService;
     private readonly CancellationTokenSource _cancelSource;
-    private readonly int _followerCacheExpiration = 3600;
-    
+
     internal FollowerMonitor(ITwitchAPI twitchApi) {
         _cancelSource = new CancellationTokenSource();
         _followerService = new FollowerService(
@@ -48,7 +47,7 @@ internal class FollowerMonitor {
         // Set channels of interest.
         _followerService.SetChannelsByName(channelList);
         await _followerService.UpdateLatestFollowersAsync(!Program.Conf.GeneralSettings.SkipNotificationsOnStartup);
-            
+
         // Start the monitor.
         _followerService.Start();
 
@@ -98,52 +97,43 @@ internal class FollowerMonitor {
             : _followerService.KnownFollowers[e.Channel];
         if (knownFollower.Count < 1)
             return;
+
+        // Get the first embed which contains the channel.
+        NotificationEvent? notificationEvent = null;
+        foreach (var notification in Program.Conf.NotificationSettings.OnFollowEvent) {
+            if (!notification.Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
+                continue;
+            notificationEvent = notification;
+            break;
+        }
+
+        if (notificationEvent == null)
+            return;
         
-        Logging.Debug($"{e.Channel} got new follower(s)!");
+        // Since user is directly exposed to KnownFollowers after following,
+        // check the time stamp.
+        var interval = Program.Conf.GeneralSettings.FollowerCheckIntervalInSeconds;
         foreach (var follower in e.NewFollowers) {
             if (follower == null)
                 continue;
             
-            // Dual layer cache.
-            // First layer:  MemoryCache will hold item for the defined time in local memory.
-            //               If first layer does not hold the follower, check the KnownFollowers.
-            // Second layer: The follower service's KnownFollowers will hold the past view followers.
-            var entry = new CacheEntry {
-                Key = $"TN_F_{e.Channel}_{follower.FromUserName}",
-                ExpirationTime = DateTime.Now.AddSeconds(_followerCacheExpiration)
-            }.HashKey();
-                
-            // First layer cache.
-            // Check if the same user had already followed the current streamer.
-            if (!Cache.IsCacheEntryExpired(entry)) {
-                var eventName = e.GetType().Name.Replace("args", "", StringComparison.OrdinalIgnoreCase);
-                Logging.Debug($"{eventName} triggered while still in cooldown...");
-                return;
-            }
-
-            Cache.AddEntry(entry);
-            
-            // Second layer cache.
-            // Check if user has followed the channel before while the first layer cache wasn't aware of it.
+            // Check if user has followed the channel before.
             Follow? known = null;
             foreach (var f in knownFollower) {
-                if (f.FromUserName == follower.FromUserName)
-                    known = f;
+                if (f.FromUserName != follower.FromUserName)
+                    continue;
+                known = f;
+                break;
             }
-
-            // Since user is directly exposed to KnownFollowers after following,
-            // check the time stamp.
-            var check = Program.Conf.GeneralSettings.FollowerCheckIntervalInSeconds;
-            if (known != null && DateTime.Now.AddSeconds(-check - check/2).ToUniversalTime() > known.FollowedAt.ToUniversalTime())
-                continue;
             
-            // Get the first embed which contains the channel.
-            var notification = Program.Conf.NotificationSettings.OnFollowEvent
-                .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
-                
+            if (known != null && DateTime.Now.AddSeconds(-interval - interval/2).ToUniversalTime() > known.FollowedAt.ToUniversalTime())
+                continue;
+            Logging.Debug($"{e.Channel} got a new follower!");
+            
+            // Clone to not modify the reference.
+            var notification = notificationEvent.Clone();
+            
             // Check if notification is null or invalid.
-            if (notification == null)
-                return;
             notification.Embed = notification.Embed.Validate();
             if (notification.Embed == null) {
                 Logging.Error("Embed validation returned null!");
@@ -165,7 +155,7 @@ internal class FollowerMonitor {
             }
             
             var json = notification.Embed.ToJson(placeholder);
-            await new Request(notification.WebHookUrl, json).SendAsync();
+            await new Request(notificationEvent.WebHookUrl, json).SendAsync();
         }
     }
 }

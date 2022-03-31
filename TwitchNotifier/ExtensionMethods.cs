@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 using TwitchNotifier.models;
 using TwitchNotifier.placeholders;
 
@@ -76,6 +78,8 @@ public static class ExtensionMethods {
     /// <param name="embed"><c>Embed</c> - The embed to validate</param>
     /// <returns><c>Embed</c> - Either truncated / original or null</returns>
     internal static Embed Validate(this Embed embed) {
+        if (embed == null)
+            return null;
         embed.Content = embed.Content.Truncate(4096);
         embed.Username = embed.Username.Truncate(80);
         embed.Author.Name = embed.Author.Name.Truncate(256);
@@ -105,9 +109,16 @@ public static class ExtensionMethods {
     /// <returns><c>String</c> - The serialized Embed</returns>
     internal static string ToJson(this Embed embed, TwitchPlaceholder placeholder) {
         // Convert Embed's color into an int.
-        int.TryParse(embed.Color.Replace("#", ""), System.Globalization.NumberStyles.HexNumber, null, out var embedColor);
-        embed.Color = embedColor.ToString();
-        
+        // Check if it matches the 3 and 6 digit syntax, afterwards try to parse it to an integer value.
+        var match = Regex.Match(embed.Color.Trim(), @"[#]*([0-9a-f]{3}){1,2}", RegexOptions.IgnoreCase);
+        if (match.Success) {
+            embed.Color = int.TryParse(match.Groups[0].Value.Replace("#", ""), System.Globalization.NumberStyles.HexNumber, null,
+                out var color) ? color.ToString() : "0";
+        } else {
+            Logging.Error($"Embed color {embed.Color} seems invalid and will be temporary set to 0!");
+            embed.Color = "0";
+        }
+
         // Get the json string of the Discord embed.
         var embedString = new Placeholder(embed.ToString(), placeholder).Replace();
         
@@ -124,5 +135,15 @@ public static class ExtensionMethods {
                    $"\"content\": \"{embed.Content}\"," + 
                    $"\"embeds\": [{embedString}]}}";
         return json;
+    }
+    
+    /// <summary>
+    /// Clones the given NotificationEvent via serialization and deserialization.
+    /// </summary>
+    /// <param name="notification"><c>NotificationEvent</c> - The notification to clone</param>
+    /// <returns><c>NotificationEvent</c> - A clone of the NotificationEvent</returns>
+    internal static NotificationEvent Clone(this NotificationEvent notification) {
+        var serialized = JsonConvert.SerializeObject(notification);
+        return JsonConvert.DeserializeObject<NotificationEvent>(serialized);
     }
 }
