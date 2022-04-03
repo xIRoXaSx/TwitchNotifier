@@ -46,7 +46,7 @@ internal class FollowerMonitor {
         
         // Set channels of interest.
         _followerService.SetChannelsByName(channelList);
-        await _followerService.UpdateLatestFollowersAsync(!Program.Conf.GeneralSettings.SkipNotificationsOnStartup);
+        await _followerService.UpdateLatestFollowersAsync(false);
 
         // Start the monitor.
         _followerService.Start();
