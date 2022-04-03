@@ -36,8 +36,9 @@ internal class Program {
             
         TwitchCore.DisposeRequested += RunDispose;
             
-        // Start the stream monitor.
+        // Start the stream and follower monitor.
         TwitchCore.StreamMonitor.Start();
+        TwitchCore.FollowerMonitor.Start();
             
         // Instantiate and start the clip monitor.
         var channels = new List<string>();
@@ -73,6 +74,7 @@ internal class Program {
         _cancelSource.Dispose();
         _cancelSource = new CancellationTokenSource();
         TwitchCore.StreamMonitor.Stop();
+        TwitchCore.FollowerMonitor.Stop();
         TwitchCore.ClipMonitor.Stop();
     }
 }

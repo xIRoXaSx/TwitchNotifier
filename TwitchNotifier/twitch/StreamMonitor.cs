@@ -80,7 +80,7 @@ namespace TwitchNotifier.twitch {
         }
 
         private static void OnChannelsSet(object? sender, OnChannelsSetArgs e) {
-            Logging.Info("Channels to monitor have been set.");
+            Logging.Info("Channels to monitor for live / offline events have been set.");
             Logging.Debug($"\t> Channel(s) to monitor: {string.Join(", ", e.Channels)}");
         }
 

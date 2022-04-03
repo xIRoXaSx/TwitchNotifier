@@ -66,12 +66,18 @@ GeneralSettings:
 
 ## Event nodes
 Each event has its very own yaml node but works the same way.  
-Whenever one of the described events happen, the node with the corresponding channel will be evaluated. 
-If the validation for that specific node passed and the given condition was satisfied, the notification will be sent.
+Whenever one of the described events happen, the first node with the corresponding channel will be evaluated. 
+If the validation for that specific node passed and the given [condition](#-conditions) was satisfied, the notification will be sent.
 
-`OnLiveEvent`: Describes the event whenever a given channel goes live / is currently live.
-`OnOfflineEvent`: Describes the event whenever a given channel goes offline.
-`OnClipCreated`: Describes the event whenever a clip has been created & picked up by the API (might take some time until Twitch's API discovers them).
+| Event name     | Description                                                                 |
+|----------------|-----------------------------------------------------------------------------|
+| OnLiveEvent    | Describes the event whenever a given channel goes live / is currently live  |
+| OnOfflineEvent | Describes the event whenever a given channel goes offline                   |
+| OnClipCreated  | Describes the event whenever a clip has been created & picked up by the API |
+| OnFollowEvent  | Describes the event whenever someone followed the given channel             |
+
+### Additional notes:
+`OnClipCreated`: Clip event might take some time until Twitch's API discovers them.
 ***
 <br/>
 
@@ -379,6 +385,40 @@ NotificationSettings:
       WebHookUrl: The Discord Webhook URL
   # Triggered whenever a clip has been created on the given channel(s).
   OnClipCreated:
+    - Condition: ''
+      Channels:
+        - Channel1
+        - Channel2
+      Embed:
+        Username: '%Channel.Name%'
+        AvatarUrl: '%Channel.User.ProfileImageUrl%'
+        Content: Content above the embed (max 2048 characters)
+        Title: '%Channel.Name% went online!'
+        Url: '%Channel.Url%'
+        Description: What are you waiting for?!\nGo check it out now!
+        Color: '#5555FF'
+        Timestamp: true
+        Thumbnail:
+          Url: '%Channel.User.ProfileImageUrl%'
+        Image:
+          Url: '%Stream.ThumbnailUrl%'
+        Author:
+          Name: "Stream Announcer \U0001F4E2"
+          IconUrl: '%Channel.User.ProfileImageUrl%'
+          Url: '%Channel.Url%'
+        Fields:
+          - Name: Unique Field Name 1
+            Value: Value of field 1
+            Inline: false
+          - Name: Unique Field Name 2
+            Value: Value of field 2
+            Inline: false
+        Footer:
+          Text: The footer text (max 2048 chars)
+          IconUrl: '%Channel.User.ProfileImageUrl%'
+      WebHookUrl: The Discord Webhook URL
+  # Triggered whenever a user follows one of the given channel(s).
+  OnFollowEvent:
     - Condition: ''
       Channels:
         - Channel1
