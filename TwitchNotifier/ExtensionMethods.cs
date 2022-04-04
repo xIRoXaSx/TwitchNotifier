@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -100,7 +101,26 @@ public static class ExtensionMethods {
             string.Join("", embed.Fields.Select(x => x.Name)).Length +
             string.Join("", embed.Fields.Select(x => x.Value)).Length <= 6000 ? embed : null;
     }
-    
+
+    /// <summary>
+    /// Get the first <c>NotificationEvent</c> inside the given list which matches the provided value.
+    /// </summary>
+    /// <param name="events"><c>IEnumerable&lt;NotificationEvent&gt;</c> - The IEnumerable of NotificationEvents</param>
+    /// <param name="value"><c>String</c> - The value to look for (case insensitive)</param>
+    /// <returns><c>NotificationEvent</c> or <c>null</c></returns>
+    internal static NotificationEvent GetFirstMatchOrNull(this IEnumerable<NotificationEvent> events, string value) {
+        foreach (var notification in events) {
+            value = value.ToLower();
+            for (var i = 0; i < notification.Channels.Count; i++) {
+                if (notification.Channels[i].ToLower() != value.ToLower()) 
+                    continue;
+                return notification;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Convert the Embed into a json string. 
     /// </summary>

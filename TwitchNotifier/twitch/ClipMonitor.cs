@@ -10,19 +10,40 @@ namespace TwitchNotifier.twitch;
 
 internal class ClipMonitor {
     private readonly CancellationTokenSource _cancelSource = new();
-    private bool notificationsActive = true;
     private IEnumerable<string> _channelIds;
+    private List<string> _channelNames;
     private readonly List<Task> _clipListenerTasks = new();
     private const int TaskDelay = 10;
 
-    internal ClipMonitor(IEnumerable<string> channelIds = null) {
-        _channelIds = channelIds;
-    }
-    
-    internal void SetChannelIds(IEnumerable<string> channelIds) {
-        _channelIds = channelIds;
-    }
+    internal async Task UpdateClipChannelsAsync() {
+        if (_channelNames == null || _channelNames.Count < 1)
+            return;
         
+        Logging.Info("Channels to monitor for clips have been set.");
+        Logging.Debug($"\t> Channel(s) to monitor: {string.Join(", ", _channelNames)}");
+        var channelIds = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: _channelNames);
+        _channelNames = null;
+        if (channelIds == null)
+            return;
+        
+        var tmpIds = new string[channelIds.Users.Length];
+        for (var i = 0; i < channelIds.Users.Length; i++) {
+            tmpIds[i] = channelIds.Users[i].Id;
+        }
+        _channelIds = tmpIds;
+    }
+
+    internal ClipMonitor() {
+        var channels = new List<string>();
+        foreach (var clipEvent in Program.Conf.NotificationSettings.OnClipCreated) {
+            foreach (var chan in clipEvent.Channels) {
+                if (!channels.Contains(chan))
+                    channels.Add(chan);
+            }
+        }
+        _channelNames = channels;
+    }
+
     internal async void Start() {
         if (_channelIds == null) {
             Logging.Error("Cannot start ClipMonitor, channels have not been set!");
@@ -31,7 +52,6 @@ internal class ClipMonitor {
         
         foreach (var channelId in _channelIds) {
             _clipListenerTasks.Add(new Task<Task>(async () => {
-                // Loop until cancellation has been requested.
                 while (!_cancelSource.Token.IsCancellationRequested) {
                     try {
                         if (!Program.TwitchCore.IsValid)
@@ -43,7 +63,7 @@ internal class ClipMonitor {
                             endedAt: DateTime.Now
                         );
 
-                        if (recent.Clips.Length < 1 || !notificationsActive) {
+                        if (recent.Clips.Length < 1) {
                             await Task.Delay(TaskDelay * 1000, _cancelSource.Token);
                             continue;
                         }
@@ -65,19 +85,18 @@ internal class ClipMonitor {
                             Logging.Debug($"Found a new clip @ channel {clip.BroadcasterName}");
                             
                             // Get the clip creator user.
-                            var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(
-                                new List<string>{clip.BroadcasterId, clip.CreatorId}
-                            );
-                            var streamer = users.Users.Length > 0 ? users.Users[0] : null;
-                            var clipper = users.Users.Length > 1 ? users.Users[1] : null;
+                            // Streamer needs to be requested for each clip to ensure that the placeholders are up-to-date.
+                            var clipper = await Program.TwitchCore.GetUser(new List<string> {clip.CreatorId}, false);
+                            var streamer = await Program.TwitchCore.GetUser(new List<string> {channelId}, false);
                             var placeholder = new TwitchPlaceholder {
                                 Channel = new ChannelPlaceholder(streamer, clip.BroadcasterName),
                                 Clip = new ClipPlaceholder(clip, clipper)
                             };
 
                             // Get the first embed which contains the channel.
-                            var notification = Program.Conf.NotificationSettings.OnClipCreated
-                                .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == clip.BroadcasterName.ToLower()));
+                            var notification = Program.Conf.NotificationSettings.OnClipCreated.GetFirstMatchOrNull(clip.BroadcasterName);
+                            if (notification == null)
+                                return;
                             
                             var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());
                             if (!cond.Evaluate()) {
@@ -102,7 +121,6 @@ internal class ClipMonitor {
         try {
             await Task.WhenAll(_clipListenerTasks);
         } catch (TaskCanceledException) {
-            // Ignore cancelled tasks.
         } catch (Exception ex) {
             Logging.Error($"ClipMonitor: caught an exception: {ex.Message}");
         }

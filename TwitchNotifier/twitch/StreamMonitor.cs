@@ -53,7 +53,6 @@ namespace TwitchNotifier.twitch {
             try {
                 await Task.Delay(-1, _cancelSource.Token);
             } catch (TaskCanceledException) {
-                // Ignore cancelled tasks.
             } catch (Exception ex) {
                 Logging.Debug($"StreamMonitor caught an exception: {ex.Message}");
             }
@@ -101,12 +100,10 @@ namespace TwitchNotifier.twitch {
             Cache.AddEntry(entry);
 
             // Get the first embed which contains the channel.
-            var notification = Program.Conf.NotificationSettings.OnLiveEvent
-                .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
-            
-            // Check if notification is null or invalid.
+            var notification = Program.Conf.NotificationSettings.OnLiveEvent.GetFirstMatchOrNull(e.Channel);
             if (notification == null)
                 return;
+
             notification.Embed = notification.Embed.Validate();
             if (notification.Embed == null) {
                 Logging.Error("Embed validation returned null!");
@@ -114,10 +111,9 @@ namespace TwitchNotifier.twitch {
             }
             
             // Get User object of streamer for placeholders.
-            var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(new List<string>{e.Stream.UserId});
-            var user = users.Users.Length > 0 ? users.Users[0] : null;
+            var streamer = await Program.TwitchCore.GetUser(new List<string> {e.Channel});
             var placeholder = new TwitchPlaceholder {
-                Channel = new ChannelPlaceholder(user, e.Channel),
+                Channel = new ChannelPlaceholder(streamer, e.Channel),
                 Stream = e.Stream
             };
 
@@ -148,12 +144,10 @@ namespace TwitchNotifier.twitch {
             Cache.AddEntry(entry);
             
             // Get the first embed which contains the channel.
-            var notification = Program.Conf.NotificationSettings.OnOfflineEvent
-                .FirstOrDefault(x => x.Channels.Select(y => y.ToLower()).Any(y=> y == e.Channel.ToLower()));
-            
-            // Check if notification is null or invalid.
+            var notification = Program.Conf.NotificationSettings.OnOfflineEvent.GetFirstMatchOrNull(e.Channel);
             if (notification == null)
                 return;
+            
             notification.Embed = notification.Embed.Validate();
             if (notification.Embed == null) {
                 Logging.Error("Embed validation returned null!");

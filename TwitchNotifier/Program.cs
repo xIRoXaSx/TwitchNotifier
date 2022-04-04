@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using TwitchNotifier.twitch;
 
-namespace TwitchNotifier; 
+namespace TwitchNotifier;
 
 internal class Program {
     internal static readonly string BinaryName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -36,21 +34,10 @@ internal class Program {
             
         TwitchCore.DisposeRequested += RunDispose;
             
-        // Start the stream and follower monitor.
+        // Start the stream, follower and clip monitor.
         TwitchCore.StreamMonitor.Start();
         TwitchCore.FollowerMonitor.Start();
-            
-        // Instantiate and start the clip monitor.
-        var channels = new List<string>();
-        foreach (var clipEvent in Conf.NotificationSettings.OnClipCreated) {
-            channels.AddRange(clipEvent.Channels);
-        }
-
-        channels = channels.Distinct().ToList();
-        var channelIds = await TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: channels);
-        TwitchCore.ClipMonitor.SetChannelIds(channelIds.Users.Select(x => x.Id));
-        Logging.Info("Starting clip monitor");
-        Logging.Debug($"\t> Channel(s) to monitor clips: {string.Join(", ", channels)}");
+        await TwitchCore.ClipMonitor.UpdateClipChannelsAsync();
         TwitchCore.ClipMonitor.Start();
 
         // Keep alive.

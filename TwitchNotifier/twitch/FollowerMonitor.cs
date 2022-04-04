@@ -9,7 +9,6 @@ using TwitchLib.Api.Interfaces;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events;
 using TwitchLib.Api.Services.Events.FollowerService;
-using TwitchNotifier.models;
 using TwitchNotifier.placeholders;
 
 namespace TwitchNotifier.twitch; 
@@ -55,7 +54,6 @@ internal class FollowerMonitor {
         try {
             await Task.Delay(-1, _cancelSource.Token);
         } catch (TaskCanceledException) {
-            // Ignore cancelled tasks.
         } catch (Exception ex) {
             Logging.Debug($"FollowerMonitor caught an exception: {ex.Message}");
         }
@@ -88,8 +86,7 @@ internal class FollowerMonitor {
     }
     
     private async void OnNewFollowersDetected(object? sender, OnNewFollowersDetectedArgs e) {
-        var users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: new List<string>{e.Channel});
-        var streamer = users.Users.Length > 0 ? users.Users[0] : null;
+        var streamer = await Program.TwitchCore.GetUser(new List<string> {e.Channel});
         if (streamer == null)
             return;
         var knownFollower = _followerService == null || !_followerService.KnownFollowers.ContainsKey(e.Channel)
@@ -99,14 +96,7 @@ internal class FollowerMonitor {
             return;
 
         // Get the first embed which contains the channel.
-        NotificationEvent? notificationEvent = null;
-        foreach (var notification in Program.Conf.NotificationSettings.OnFollowEvent) {
-            if (!notification.Channels.Contains(e.Channel, StringComparer.OrdinalIgnoreCase))
-                continue;
-            notificationEvent = notification;
-            break;
-        }
-
+        var notificationEvent = Program.Conf.NotificationSettings.OnFollowEvent.GetFirstMatchOrNull(e.Channel);
         if (notificationEvent == null)
             return;
         
@@ -132,8 +122,6 @@ internal class FollowerMonitor {
             
             // Clone to not modify the reference.
             var notification = notificationEvent.Clone();
-            
-            // Check if notification is null or invalid.
             notification.Embed = notification.Embed.Validate();
             if (notification.Embed == null) {
                 Logging.Error("Embed validation returned null!");
@@ -141,11 +129,10 @@ internal class FollowerMonitor {
             }
             
             // Get User object of streamer for placeholders.
-            users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(new List<string>{follower.FromUserId});
-            var user = users.Users.Length > 0 ? users.Users[0] : null;
+            var followUser = await Program.TwitchCore.GetUser(new List<string> {follower.FromUserName});
             var placeholder = new TwitchPlaceholder {
                 Channel = new ChannelPlaceholder(streamer, e.Channel),
-                Follower = new FollowerPlaceholder(user, follower.FollowedAt)
+                Follower = new FollowerPlaceholder(followUser, follower.FollowedAt)
             };
 
             var cond = new Condition(new Placeholder(notification.Condition, placeholder).Replace());

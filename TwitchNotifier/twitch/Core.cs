@@ -1,8 +1,11 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using TwitchLib.Api;
 using TwitchLib.Api.Core.Exceptions;
+using TwitchLib.Api.Helix.Models.Users.GetUsers;
 
 namespace TwitchNotifier.twitch {
     internal class Core {
@@ -46,6 +49,26 @@ namespace TwitchNotifier.twitch {
         /// </summary>
         public void Dispose() {
             DisposeRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Get a single <c>User</c> with the corresponding name or id from the provided IEnumerable.
+        /// </summary>
+        /// <param name="channel"><c>IEnumerable&lt;string&gt;</c> - The IEnumerable containing the channel name / Id.</param>
+        /// <param name="isName"><c>Bool</c> - Whether the given IEnumerable contains the name or the Id.</param>
+        /// <returns><c>User?</c> - Either the matched User or null</returns>
+        internal async Task<User?> GetUser(IEnumerable<string> channel, bool isName = true) {
+            var userList = channel.ToList();
+            if (userList.Count < 1)
+                return null;
+            
+            GetUsersResponse? users;
+            if (isName) {
+                users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(logins: userList);
+            } else {
+                users = await Program.TwitchCore.TwitchApi.Helix.Users.GetUsersAsync(ids: userList);
+            }
+            return users.Users.Length > 0 ? users.Users[0] : null;
         }
     }
 }
