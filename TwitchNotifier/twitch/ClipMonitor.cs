@@ -51,7 +51,7 @@ internal class ClipMonitor {
         }
         
         foreach (var channelId in _channelIds) {
-            _clipListenerTasks.Add(new Task<Task>(async () => {
+            _clipListenerTasks.Add(Task.Run(async () => {
                 while (!_cancelSource.Token.IsCancellationRequested) {
                     try {
                         if (!Program.TwitchCore.IsValid)
