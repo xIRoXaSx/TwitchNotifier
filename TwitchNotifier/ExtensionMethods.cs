@@ -10,7 +10,6 @@ using TwitchNotifier.placeholders;
 namespace TwitchNotifier; 
 
 public static class ExtensionMethods {
-
     /// <summary>
     /// <b>! Needs to be benchmarked against ToSnakeCase !</b>
     /// </summary>
