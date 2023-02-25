@@ -4,7 +4,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using Newtonsoft.Json;
 using TwitchNotifier.models;
 using TwitchNotifier.placeholders;
 
@@ -114,7 +113,7 @@ public static class ExtensionMethods {
             for (var i = 0; i < notification.Channels.Count; i++) {
                 if (notification.Channels[i].ToLower() != value.ToLower()) 
                     continue;
-                return notification;
+                return notification.Clone();
             }
         }
 
@@ -158,12 +157,30 @@ public static class ExtensionMethods {
     }
     
     /// <summary>
-    /// Clones the given NotificationEvent via serialization and deserialization.
+    /// Clones the given NotificationEvent via reconstructing.
     /// </summary>
     /// <param name="notification"><c>NotificationEvent</c> - The notification to clone</param>
     /// <returns><c>NotificationEvent</c> - A clone of the NotificationEvent</returns>
     internal static NotificationEvent Clone(this NotificationEvent notification) {
-        var serialized = JsonConvert.SerializeObject(notification);
-        return JsonConvert.DeserializeObject<NotificationEvent>(serialized);
+        return new NotificationEvent {
+            Channels = new List<string>(notification.Channels),
+            Condition = notification.Condition,
+            Embed = new Embed {
+                Author = notification.Embed.Author,
+                Color = notification.Embed.Color,
+                Content = notification.Embed.Content,
+                Description = notification.Embed.Description,
+                Fields = new List<EmbedField>(notification.Embed.Fields),
+                Footer = notification.Embed.Footer,
+                Image = notification.Embed.Image,
+                Thumbnail = notification.Embed.Thumbnail,
+                Timestamp = notification.Embed.Timestamp,
+                Title = notification.Embed.Title,
+                Url = notification.Embed.Url,
+                Username = notification.Embed.Username,
+                AvatarUrl = notification.Embed.AvatarUrl
+            },
+            WebHookUrl = notification.WebHookUrl,
+        };
     }
 }
